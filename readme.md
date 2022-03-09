@@ -8,5 +8,4 @@ N상승 반등타기
 >두번째 상승이 첫번째 상승보다 높은 지점에서 반등을 시도할때
 >매수를 하면 두번째 상승구간에서 이익을 취할 수 있다.
 
-
 ![image](https://user-images.githubusercontent.com/89228714/157346325-d2b6dee2-ffb8-4ea5-9e97-ea96119cf7f4.png)
