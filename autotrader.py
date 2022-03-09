@@ -56,8 +56,8 @@ while  True :
                 avg_buy_price = upbit_trade.get_avg_buy_price(t.currency)
                 if  loop_cnt >= print_loop :
                     print_(t.name,f'Sell: get_balance(btc): {btc}, avg_buy_price = {avg_buy_price}, current_price= {current_price}')
-                if  ( current_price > avg_buy_price * 1.025 ) or \
-                    ( current_price < avg_buy_price * 0.97 ) :
+                if  ( current_price > avg_buy_price * 1.02 ) or \
+                    ( current_price < avg_buy_price * 0.98 ) :
                     upbit_trade.sell_limit_order(t.name, current_price, btc )
                 continue
 
@@ -70,15 +70,19 @@ while  True :
                 print(t.simp_df,flush=True)
                 
             if t.target_price > 0 :
-                current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
-                print_(t.name,f'BUY: Target_Price={t.target_price},'+ \
-                    f'Current_price={current_price}')
-                if t.target_price * 1.005 > current_price:
-                    krw = upbit_trade.get_balance("KRW")
-                    print_(t.name,f'get_balance(KRW): {krw}')
-                    if krw > 5000:
-                        upbit_trade.buy_limit_order(t.name, current_price, (krw*0.999)//current_price )
-
+                trys = 100
+                while trys > 0 :
+                    trys -= 1
+                    current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
+                    print_(t.name,f'BUY: Target_Price={t.target_price},'+ \
+                        f'Current_price={current_price}')
+                    if t.target_price * 1.005 > current_price:
+                        krw = upbit_trade.get_balance("KRW")
+                        print_(t.name,f'get_balance(KRW): {krw}')
+                        if krw > 5000:
+                            upbit_trade.buy_limit_order(t.name, current_price, (krw*0.999)//current_price )
+                            break
+                    time.sleep(1)
             time.sleep(1)
 
     except Exception as e:
