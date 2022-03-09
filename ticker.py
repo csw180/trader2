@@ -53,19 +53,11 @@ class Ticker :
             df['price'] = np.select(conditionlist, choicelist2, default='')
             df['price'] = df['price'].astype(float, errors='ignore')
 
-            if  len(df.index) < 100 :
-                self.df = None
-                return
-
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             refine_df = None
 
             df_copy = df.copy()
             df_copy = df_copy[df_copy['way'] > '']
-            # print(f'df={df}')
-            # print(f'df.info()={df.info()}')
-            # print(f'len(df.index)={len(df.index)}')
-            # print(f'len(df_copy.index)={len(df_copy.index)}')
 
             if len(df_copy.index) > 0 :
                 df_copy = df_copy[::-1]
@@ -124,7 +116,7 @@ class Ticker :
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-1]['ma5'] < self.simp_df.iloc[-1]['close']) and \
                     (self.simp_df.iloc[-2]['ma5'] < self.simp_df.iloc[-2]['close']) :
-                    self.target_price =  self.simp_df.iloc[-1]['ma5']  
+                    self.target_price =  self.simp_df.iloc[-1]['ma5']
                 else : 
                     self.target_price =  0  
             else :
@@ -156,7 +148,7 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-MBL')
+    t  = Ticker('KRW-WEMIX')
 
     t.make_df()
     print(t.df.tail(30))
