@@ -36,16 +36,26 @@ class Ticker :
                 return
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
+            # conditionlist = [
+            #                 (df['close'] > df['ma5']) & \
+            #                 (df['close'].shift(1) < df['ma5'].shift(1)) & \
+            #                 (df['close'].shift(2) < df['ma5'].shift(2)) & \
+            #                 (df['close'].shift(3) < df['ma5'].shift(3))    ,\
+            #                 (df['close'] < df['ma5']) &\
+            #                 (df['close'].shift(1) > df['ma5'].shift(1)) &\
+            #                 (df['close'].shift(2) > df['ma5'].shift(2)) &\
+            #                 (df['close'].shift(3) > df['ma5'].shift(3)) \
+            #                 ]
             conditionlist = [
-                            (df['close'] > df['ma5']) & \
-                            (df['close'].shift(1) < df['ma5'].shift(1)) & \
-                            (df['close'].shift(2) < df['ma5'].shift(2)) & \
-                            (df['close'].shift(3) < df['ma5'].shift(3))    ,\
-                            (df['close'] < df['ma5']) &\
-                            (df['close'].shift(1) > df['ma5'].shift(1)) &\
-                            (df['close'].shift(2) > df['ma5'].shift(2)) &\
-                            (df['close'].shift(3) > df['ma5'].shift(3)) \
-                            ]
+                            ( (df['high'] + df['low'])/2 > df['ma5']) & \
+                            ( (df['high'].shift(1) + df['low'].shift(1))/2 < df['ma5'].shift(1)) & \
+                            ( (df['high'].shift(2) + df['low'].shift(2))/2 < df['ma5'].shift(2)) & \
+                            ( (df['high'].shift(3) + df['low'].shift(3))/2 < df['ma5'].shift(3))    ,\
+                            ( (df['high'] + df['low'])/2 < df['ma5']) &\
+                            ( (df['high'].shift(1) + df['low'].shift(1))/2 > df['ma5'].shift(1)) &\
+                            ( (df['high'].shift(2) + df['low'].shift(2))/2 > df['ma5'].shift(2)) &\
+                            ( (df['high'].shift(3) + df['low'].shift(3))/2 > df['ma5'].shift(3)) \
+                            ]            
             choicelist1 = ['up', 'down']
             choicelist2 = [df['low'].rolling(4).min(),df['high'].rolling(4).max()]
 
@@ -148,7 +158,7 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-WEMIX')
+    t  = Ticker('KRW-KNC')
 
     t.make_df()
     print(t.df.tail(30))
