@@ -119,7 +119,7 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and  \
-                    ( 1-( self.simp_df.iloc[0]['p_d1']/self.simp_df.iloc[0]['price']) > 0.014) and \
+                    ( 1-( self.simp_df.iloc[0]['price']/self.simp_df.iloc[0]['p_d1']) > 0.014) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-1]['ma5'] < self.simp_df.iloc[-1]['close']) and \
