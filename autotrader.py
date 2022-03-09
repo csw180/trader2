@@ -66,13 +66,14 @@ while  True :
             #     print_(t.name,f'Decision: Target_Price={t.target_price},'+ \
             #         f'Simple_DF={0 if t.simp_df is None else len(t.simp_df.index)}')
             if t.target_price > 0 :
-                print_(t.name,t.simp_df)
+                print_(t.name,'simp_df')
+                print(t.simp_df,flush=True)
                 
             if t.target_price > 0 :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
                 print_(t.name,f'BUY: Target_Price={t.target_price},'+ \
                     f'Current_price={current_price}')
-                if t.target_price < current_price:
+                if t.target_price * 1.005 > current_price:
                     krw = upbit_trade.get_balance("KRW")
                     print_(t.name,f'get_balance(KRW): {krw}')
                     if krw > 5000:

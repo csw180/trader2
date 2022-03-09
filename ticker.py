@@ -91,16 +91,18 @@ class Ticker :
                         refine_df = self.process_trickery(trickery_list).copy()
                     else :
                         refine_df = pd.concat([refine_df,self.process_trickery(trickery_list)])
-                
-                refine_df['p_d1'] = refine_df['price'].shift(-1)
-                refine_df['p_d2'] = refine_df['price'].shift(-2)
+                if  len(refine_df.index) > 2 :    
+                    refine_df['p_d1'] = refine_df['price'].shift(-1)
+                    refine_df['p_d2'] = refine_df['price'].shift(-2)
 
-                refine_df['p_d1'] = refine_df['p_d1'].astype(float, errors ='ignore')
-                refine_df['p_d2'] = refine_df['p_d2'].astype(float, errors ='ignore')
-                refine_df['price'] = refine_df['price'].astype(float, errors ='ignore')
-                refine_df['attack'] = refine_df.apply( 
-                    lambda row : 'good' if (row['way'] == 'up') and (row['price'] > (row['p_d2']*1.01)) else '' ,axis=1)
-                        
+                    refine_df['p_d1'] = refine_df['p_d1'].astype(float, errors ='ignore')
+                    refine_df['p_d2'] = refine_df['p_d2'].astype(float, errors ='ignore')
+                    refine_df['price'] = refine_df['price'].astype(float, errors ='ignore')
+                    refine_df['attack'] = refine_df.apply( 
+                        lambda row : 'good' if (row['way'] == 'up') and (row['price'] > (row['p_d2']*1.01)) else '' ,axis=1)
+                else :
+                    refine_df = None
+
             if (df is None) or (refine_df is None) :
                 self.df = None
                 return False
@@ -116,7 +118,9 @@ class Ticker :
             goodidx = df.index[df['attack']=='good'].tolist()
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
-                if  (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
+                if  (len(self.simp_df.index) == 3) and  \
+                    ( 1-( self.simp_df.iloc[0]['p_d1']/self.simp_df.iloc[0]['price']) > 0.014) and \
+                    (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-1]['ma5'] < self.simp_df.iloc[-1]['close']) and \
                     (self.simp_df.iloc[-2]['ma5'] < self.simp_df.iloc[-2]['close']) :
@@ -152,7 +156,7 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-CRE')
+    t  = Ticker('KRW-MBL')
 
     t.make_df()
     print(t.df.tail(30))
