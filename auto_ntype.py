@@ -63,7 +63,7 @@ while  True :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["bid_price"])
                 avg_buy_price = upbit_trade.get_avg_buy_price(t.currency)
                 if  loop_cnt >= print_loop :
-                    print_(t.name,f'Sell: balance(btc): {btc}, avg:p-cut:l-cut = {avg_buy_price}:{avg_buy_price*1.015}:{avg_buy_price*0.985}, curr_price= {current_price}')
+                    print_(t.name,f'Sell: balance(btc): {btc},avg:p-cut:l-cut = {avg_buy_price:.2f}:{avg_buy_price*1.015:.2f}:{avg_buy_price*0.985:.2f},curr_price= {current_price:.2f}')
                 if  ( current_price > avg_buy_price * 1.015 ) or \
                     ( current_price < avg_buy_price * 0.985 ) :
                     upbit_trade.sell_limit_order(t.name, current_price, btc )
@@ -80,7 +80,7 @@ while  True :
                 while trys > 0 :
                     trys -= 1
                     current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
-                    print_(t.name,f'BUY{trys}: Target:TP*1.005={t.target_price}:{t.target_price*1.005}, curr_price={current_price}')
+                    print_(t.name,f'BUY{trys}: Target:TP*1.005={t.target_price:.2f}:{t.target_price*1.005:.2f}, curr_price={current_price:.2f}')
                     if t.target_price * 1.005 > current_price:
                         krw = upbit_trade.get_balance("KRW")
                         print_(t.name,f'get_balance(KRW): {krw}')
