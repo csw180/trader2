@@ -1,5 +1,6 @@
 import time
 import pyupbit
+import pandas as pd
 import datetime as dt
 from ticker import Ticker
 import upbit_trade
@@ -71,6 +72,7 @@ while  True :
 
             t.make_df()
             if t.target_price > 0 :
+                pd.set_option('display.max_columns', None)
                 print_(t.name,'-------- Simple DataFrame ---------')
                 print(t.simp_df,flush=True)
                 print_(t.name,'-----------------------------------')
@@ -83,9 +85,9 @@ while  True :
                     print_(t.name,f'BUY{trys}: Target:TP*1.005={t.target_price:.2f}:{t.target_price*1.005:.2f}, curr_price={current_price:.2f}')
                     if t.target_price * 1.005 > current_price:
                         krw = upbit_trade.get_balance("KRW")
-                        print_(t.name,f'get_balance(KRW): {krw}')
+                        print_(t.name,f'get_balance(KRW): {krw} limit:{100000 if krw >= 100000 else krw} ')
                         if krw > 5000:
-                            upbit_trade.buy_limit_order(t.name, current_price, (krw*0.999)//current_price )
+                            upbit_trade.buy_limit_order(t.name, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
                             break
                     time.sleep(1)
             time.sleep(1)

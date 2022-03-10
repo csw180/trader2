@@ -158,7 +158,7 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-KNC')
+    t  = Ticker('KRW-ICX')
 
     t.make_df()
     print(t.df.tail(30))
