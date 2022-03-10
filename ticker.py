@@ -38,24 +38,14 @@ class Ticker :
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
             conditionlist = [
                             (df['close'] > df['ma5']) & \
-                            (df['close'].shift(1) < df['ma5'].shift(1)) & \
-                            (df['close'].shift(2) < df['ma5'].shift(2)) & \
-                            (df['close'].shift(3) < df['ma5'].shift(3))    ,\
+                            (df['close'].shift(1) <= df['ma5'].shift(1)) & \
+                            (df['close'].shift(2) <= df['ma5'].shift(2)) & \
+                            (df['close'].shift(3) <= df['ma5'].shift(3))    ,\
                             (df['close'] < df['ma5']) &\
-                            (df['close'].shift(1) > df['ma5'].shift(1)) &\
-                            (df['close'].shift(2) > df['ma5'].shift(2)) &\
-                            (df['close'].shift(3) > df['ma5'].shift(3)) \
-                            ]
-            # conditionlist = [
-            #                 ( df['close'] > df['ma5']) & \
-            #                 ( (df['high'].shift(1) + df['low'].shift(1))/2 < df['ma5'].shift(1)) & \
-            #                 ( (df['high'].shift(2) + df['low'].shift(2))/2 < df['ma5'].shift(2)) & \
-            #                 ( (df['high'].shift(3) + df['low'].shift(3))/2 < df['ma5'].shift(3))    ,\
-            #                 ( df['close'] < df['ma5']) &\
-            #                 ( (df['high'].shift(1) + df['low'].shift(1))/2 > df['ma5'].shift(1)) &\
-            #                 ( (df['high'].shift(2) + df['low'].shift(2))/2 > df['ma5'].shift(2)) &\
-            #                 ( (df['high'].shift(3) + df['low'].shift(3))/2 > df['ma5'].shift(3)) \
-            #                 ]            
+                            (df['close'].shift(1) >= df['ma5'].shift(1)) &\
+                            (df['close'].shift(2) >= df['ma5'].shift(2)) &\
+                            (df['close'].shift(3) >= df['ma5'].shift(3)) \
+                            ]        
             choicelist1 = ['up', 'down']
             choicelist2 = [df['low'].rolling(5).min(),df['high'].rolling(5).max()]
 
@@ -101,7 +91,7 @@ class Ticker :
                     refine_df['p_d2'] = refine_df['p_d2'].astype(float, errors ='ignore')
                     refine_df['price'] = refine_df['price'].astype(float, errors ='ignore')
                     refine_df['attack'] = refine_df.apply( 
-                        lambda row : 'good' if (row['way'] == 'up') and (row['price'] > (row['p_d2']*1.01)) else '' ,axis=1)
+                        lambda row : 'good' if (row['way'] == 'up') and (row['price'] > (row['p_d2']*1.003)) else '' ,axis=1)
                 else :
                     refine_df = None
 
@@ -122,11 +112,11 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and  \
-                    ( 1-( self.simp_df.iloc[0]['price']/self.simp_df.iloc[0]['p_d1']) > 0.014) and \
+                    ( 1-( self.simp_df.iloc[0]['price']/self.simp_df.iloc[0]['p_d1']) > 0.015) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[-1]['ma5'] < self.simp_df.iloc[-1]['close']) and \
-                    (self.simp_df.iloc[-2]['ma5'] < self.simp_df.iloc[-2]['close']) :
+                    (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['low']) and \
+                    (self.simp_df.iloc[-2]['ma5'] <= self.simp_df.iloc[-2]['close']) :
                     self.target_price =  self.simp_df.iloc[-1]['ma5']
                 else : 
                     self.target_price =  0  
@@ -159,8 +149,8 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-WAVES')
-
+    t  = Ticker('KRW-BTG')
+    pd.set_option('display.max_columns', None)
     t.make_df()
     print(t.df.tail(30))
 

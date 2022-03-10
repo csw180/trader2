@@ -78,7 +78,7 @@ while  True :
                 print_(t.name,'-----------------------------------')
             
             if t.target_price > 0 :
-                trys = 15
+                trys = 40
                 while trys > 0 :
                     trys -= 1
                     current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
