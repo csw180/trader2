@@ -64,7 +64,7 @@ while  True :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["bid_price"])
                 avg_buy_price = upbit_trade.get_avg_buy_price(t.currency)
                 if  loop_cnt >= print_loop :
-                    print_(t.name,f'Sell: balance(btc): {btc},avg:p-cut:l-cut = {avg_buy_price:.2f}:{avg_buy_price*1.015:.2f}:{avg_buy_price*0.985:.2f},curr_price= {current_price:.2f}')
+                    print_(t.name,f'sell_balance(btc):{btc}, avg:p-cut:l-cut = {avg_buy_price:.2f}:{avg_buy_price*1.015:.2f}:{avg_buy_price*0.985:.2f}, curr_price= {current_price:.2f}')
                 if  ( current_price > avg_buy_price * 1.015 ) or \
                     ( current_price < avg_buy_price * 0.985 ) :
                     upbit_trade.sell_limit_order(t.name, current_price, btc )
@@ -78,17 +78,17 @@ while  True :
                 print_(t.name,'-----------------------------------')
             
             if t.target_price > 0 :
-                trys = 50
+                trys = 15
                 while trys > 0 :
                     trys -= 1
                     current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
-                    print_(t.name,f'BUY{trys}: Target:TP*1.005={t.target_price:.2f}:{t.target_price*1.005:.2f}, curr_price={current_price:.2f}')
+                    print_(t.name,f'buy_{trys}: Target:TP*1.005={t.target_price:.2f}:{t.target_price*1.005:.2f}, curr_price={current_price:.2f}')
                     if t.target_price * 1.005 > current_price:
                         krw = upbit_trade.get_balance("KRW")
-                        print_(t.name,f'get_balance(KRW): {krw} limit:{100000 if krw >= 100000 else krw} ')
+                        print_(t.name,f'buy_get_balance(KRW): {krw:.2f} limit:{(100000 if krw >= 100000 else krw):.2f}')
                         if krw > 5000:
                             upbit_trade.buy_limit_order(t.name, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
-                            break
+                            continue
                     time.sleep(1)
             time.sleep(1)
 
