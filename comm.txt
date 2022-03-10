@@ -1,0 +1,1 @@
+nohup python3 auto_ntype.py > output.log &
