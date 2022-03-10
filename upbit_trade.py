@@ -50,12 +50,12 @@ def get_avg_buy_price(ticker):
 
 def  sell_limit_order(ticker,price,amount) :
     ret = upbit.sell_limit_order(ticker, price, amount)
-    print_(ticker,f'sell_limit_order {price:.2f}, {amount:.2f}')
+    print_(ticker,f'sell_limit_order {price:,.4f}, {amount:,.4f}')
     print_(ticker,f'sell_limit_order ret = {ret}')
 
 def  buy_limit_order(ticker,price,amount) :
     ret = upbit.buy_limit_order(ticker, price, amount )
-    print_(ticker,f'buy_limit_order {price:.2f}, {amount:.2f}')
+    print_(ticker,f'buy_limit_order {price:,.4f}, {amount:,.4f}')
     print_(ticker,f'buy_limit_order ret = {ret}')
 
 if __name__ == "__main__":

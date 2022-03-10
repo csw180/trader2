@@ -115,8 +115,9 @@ class Ticker :
                     ( 1-( self.simp_df.iloc[0]['price']/self.simp_df.iloc[0]['p_d1']) > 0.015) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['low']) and \
-                    (self.simp_df.iloc[-2]['ma5'] <= self.simp_df.iloc[-2]['close']) :
+                    (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['close']) and \
+                    (self.simp_df.iloc[-2]['open'] <= self.simp_df.iloc[-2]['close']) and \
+                    (self.simp_df.iloc[-2]['ma5'] <= self.simp_df.iloc[-2]['open']) :
                     self.target_price =  self.simp_df.iloc[-1]['ma5']
                 else : 
                     self.target_price =  0  
