@@ -64,9 +64,9 @@ while  True :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["bid_price"])
                 avg_buy_price = upbit_trade.get_avg_buy_price(t.currency)
                 if  loop_cnt >= print_loop :
-                    print_(t.name,f'sell_balance(btc):{btc}, avg:p-cut:l-cut = {avg_buy_price:.2f}:{avg_buy_price*1.015:.2f}:{avg_buy_price*0.985:.2f}, curr_price= {current_price:.2f}')
+                    print_(t.name,f'sell_balance(btc):{btc}, avg:p-cut:l-cut = {avg_buy_price:,.4f}:{avg_buy_price*1.015:,.4f}:{max(avg_buy_price * 0.985,t.losscut_price):,.4f}, curr_price= {current_price:,.4f}')
                 if  ( current_price > avg_buy_price * 1.015 ) or \
-                    ( current_price < avg_buy_price * 0.985 ) :
+                    ( current_price < max(avg_buy_price * 0.985,t.losscut_price) ) :
                     upbit_trade.sell_limit_order(t.name, current_price, btc )
                 continue
 

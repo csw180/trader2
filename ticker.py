@@ -34,8 +34,10 @@ class Ticker :
             if  len(df.index) < 100 :
                 self.df = None
                 return
+            df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
+            df['ma5_asc_rt'] = (df['ma5_asc'] / df['ma5']) * 100
             conditionlist = [
                             (df['close'] > df['ma5']) & \
                             (df['close'].shift(1) <= df['ma5'].shift(1)) & \
@@ -47,7 +49,7 @@ class Ticker :
                             (df['close'].shift(3) >= df['ma5'].shift(3)) \
                             ]        
             choicelist1 = ['up', 'down']
-            choicelist2 = [df['low'].rolling(5).min(),df['high'].rolling(5).max()]
+            choicelist2 = [df['low'].rolling(4).min(),df['high'].rolling(4).max()]
 
             df['way'] = np.select(conditionlist, choicelist1, default='')
             df['price'] = np.select(conditionlist, choicelist2, default='')
@@ -101,7 +103,6 @@ class Ticker :
 
             # 기초 df 와 refine_df 를 join 한다.
             df = df.drop(['way','price'],axis = 1)
-            df['ser'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             self.df = df.join(refine_df)
 
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
@@ -111,14 +112,16 @@ class Ticker :
             goodidx = df.index[df['attack']=='good'].tolist()
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
-                if  (len(self.simp_df.index) == 3) and  \
+                if  (len(self.simp_df.index) == 3) and \
                     ( 1-( self.simp_df.iloc[0]['price']/self.simp_df.iloc[0]['p_d1']) > 0.015) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[0]['open'] < self.simp_df.iloc[0]['close']) and \
+                    (self.simp_df.iloc[0]['close'] < self.simp_df.iloc[-2]['close']) and \
                     (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['close']) and \
-                    (self.simp_df.iloc[-2]['open'] <= self.simp_df.iloc[-2]['close']) and \
-                    (self.simp_df.iloc[-2]['ma5'] <= self.simp_df.iloc[-2]['open']) :
+                    (self.simp_df.iloc[-2]['ma5'] < self.simp_df.iloc[-2]['open']) :
                     self.target_price =  self.simp_df.iloc[-1]['ma5']
+                    self.losscut_price = self.simp_df.iloc[0]['price']
                 else : 
                     self.target_price =  0  
             else :
@@ -150,7 +153,7 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-BTG')
+    t  = Ticker('KRW-ICX')
     pd.set_option('display.max_columns', None)
     t.make_df()
     print(t.df.tail(30))
