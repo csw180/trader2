@@ -39,23 +39,23 @@ tickers = best_volume_tickers()
 print_('',f"best_volume_tickers finished.. count={len(tickers)} tickers={tickers}")
 
 current_time = dt.datetime.now()
-next_time = current_time + dt.timedelta(hours=6)
+next_time = current_time + dt.timedelta(hours=2)
 
 loop_cnt = 0
-print_loop = 20
+print_loop = 10
 # 자동매매 시작
 while  True :
     loop_cnt +=1
     try : 
         current_time = dt.datetime.now()
-        balances =  upbit_trade.get_balances()
-        if  (len(balances) == 0) and (current_time > next_time) :  # 주기적으로 거래량top10 종목들 재갱신
-            next_time = current_time + dt.timedelta(hours=6)
+        balances = upbit_trade.get_balances()
+        if  (len(balances)==0) and  (current_time > next_time) :  # 주기적으로 거래량top10 종목들 재갱신
+            next_time = current_time + dt.timedelta(hours=2)
             tickers = best_volume_tickers()
             print_('',f"best_volume_tickers finished.. count={len(tickers)} tickers={tickers}")
             continue
 
-        if  loop_cnt >= print_loop + 1 :   # 운영모드로 가면 충분히 크게 바꿀것..
+        if  loop_cnt >= (print_loop + 1) :   # 운영모드로 가면 충분히 크게 바꿀것..
             loop_cnt = 0
 
         for t in  tickers :  

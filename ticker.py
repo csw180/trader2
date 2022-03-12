@@ -39,7 +39,8 @@ class Ticker :
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
-            df['ma5_asc_rt'] = (df['ma5_asc'] / df['ma5']) * 100
+
+            df['vma20'] = df['value'].rolling(window=20).mean()
             conditionlist = [
                             (df['close'] > df['ma5']) & \
                             (df['close'].shift(1) <= df['ma5'].shift(1)) & \
@@ -119,15 +120,18 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and \
-                    ( 1-( self.simp_df.iloc[0]['price']/self.simp_df.iloc[0]['p_d1']) > 0.015) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[0]['open'] < self.simp_df.iloc[0]['close']) and \
-                    (self.simp_df.iloc[0]['close'] < self.simp_df.iloc[-2]['close']) and \
-                    (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['close']) and \
-                    (self.simp_df.iloc[-2]['ma5'] < self.simp_df.iloc[-2]['open']) :
+                    (self.simp_df.iloc[0]['close'] < max(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
+                    (self.simp_df.iloc[-2]['ma5']  < min(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
+                    (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['close']) :
                     self.target_price =  self.simp_df.iloc[-1]['ma5']
                     self.losscut_price = self.simp_df.iloc[0]['price']
+                    val_fromIdx, val_toIdx = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
+                    val_size = df[(val_fromIdx <= df['serial'])  &  (df['serial']  <= val_toIdx)]['value'].sum() / \
+                                (val_toIdx - val_fromIdx + 1) / \
+                                self.simp_df.iloc[0]['vma20']
+                    print_(self.name,f'val_size={val_size:,.2f}' )
                 else : 
                     self.target_price =  0  
             else :
@@ -161,17 +165,17 @@ class Ticker :
         return pd.DataFrame(data_dict, index=index_list)
 
 if __name__ == "__main__":
-    # t  = Ticker('KRW-KNC')
+    # t  = Ticker('KRW-NEAR')
     t  = Ticker('KRW-NEAR')
     # pd.set_option('display.max_columns', None)
     t.make_df()
 
     # dataframe 출력하기
-    print(t.df.tail(30))
-    print(t.simp_df)
-    print(t.target_price)
+    # print(t.df.tail(30))
+    # print(t.simp_df)
+    # print(t.target_price)
 
-    # 표 그리기
+    # # 표 그리기
     fillered_df = t.df[t.df['way'] > '']
     plt.figure(figsize=(9,5))
     plt.plot(t.df.index, t.df['ma5'], label="MA5")

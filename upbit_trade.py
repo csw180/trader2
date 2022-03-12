@@ -59,4 +59,5 @@ def  buy_limit_order(ticker,price,amount) :
     print_(ticker,f'buy_limit_order ret = {ret}')
 
 if __name__ == "__main__":
-    pass
+    balances =  get_balances()  
+    print(len(balances))
