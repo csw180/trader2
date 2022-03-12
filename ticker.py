@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import pyupbit
+import matplotlib.pyplot as plt
 
 def print_(ticker,msg)  :
     if  ticker :
@@ -19,6 +20,7 @@ class Ticker :
         self.fee = 0.0005   #업비트 거래소 매매거래 수수료
         self.df = None
         self.target_price =  0
+        self.losscut_price = 0
         self.simp_df = None
         
     def __repr__(self):
@@ -87,10 +89,14 @@ class Ticker :
                         refine_df = pd.concat([refine_df,self.process_trickery(trickery_list)])
                 if  len(refine_df.index) > 2 :    
                     refine_df['p_d1'] = refine_df['price'].shift(-1)
+                    refine_df['p_d1_ser'] = refine_df['serial'].shift(-1)
                     refine_df['p_d2'] = refine_df['price'].shift(-2)
+                    refine_df['p_d2_ser'] = refine_df['serial'].shift(-2)
 
                     refine_df['p_d1'] = refine_df['p_d1'].astype(float, errors ='ignore')
                     refine_df['p_d2'] = refine_df['p_d2'].astype(float, errors ='ignore')
+                    refine_df['p_d1_ser'] = refine_df['p_d1_ser'].astype(float, errors ='ignore')
+                    refine_df['p_d2_ser'] = refine_df['p_d2_ser'].astype(float, errors ='ignore')
                     refine_df['price'] = refine_df['price'].astype(float, errors ='ignore')
                     refine_df['attack'] = refine_df.apply( 
                         lambda row : 'good' if (row['way'] == 'up') and (row['price'] > (row['p_d2']*1.003)) else '' ,axis=1)
@@ -102,7 +108,7 @@ class Ticker :
                 return False
 
             # 기초 df 와 refine_df 를 join 한다.
-            df = df.drop(['way','price'],axis = 1)
+            df = df.drop(['way','price','serial'],axis = 1)
             self.df = df.join(refine_df)
 
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
@@ -137,26 +143,40 @@ class Ticker :
         data_dict = {}    # way, price 두개 요소
         data_dict['way'] = None
         data_dict['price'] = None
+        data_dict['serial'] = None
         for row in trickery_list:
             if len(index_list) == 0 :
                 index_list.append(row.Index)
                 data_dict['way'] = row.way
                 data_dict['price'] = row.price
+                data_dict['serial'] = row.serial
                 continue
             elif  ( (row.way == 'up') and (row.low < float(data_dict['price']) )) or \
                     ( (row.way == 'down') and (row.high > float(data_dict['price']) )) :
                 index_list.clear()
                 index_list.append(row.Index)
                 data_dict['way'] = row.way
-                data_dict['price'] = row.price   
+                data_dict['price'] = row.price
+                data_dict['serial'] = row.serial
         return pd.DataFrame(data_dict, index=index_list)
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-KNC')
-    t  = Ticker('KRW-ICX')
-    pd.set_option('display.max_columns', None)
+    t  = Ticker('KRW-NEAR')
+    # pd.set_option('display.max_columns', None)
     t.make_df()
-    print(t.df.tail(30))
 
+    # dataframe 출력하기
+    print(t.df.tail(30))
     print(t.simp_df)
     print(t.target_price)
+
+    # 표 그리기
+    fillered_df = t.df[t.df['way'] > '']
+    plt.figure(figsize=(9,5))
+    plt.plot(t.df.index, t.df['ma5'], label="MA5")
+    plt.plot(fillered_df.index, fillered_df['price'], label="Price")
+    plt.plot(t.df.index, t.df['close'], label="close")
+    plt.legend(loc='best')
+    plt.grid()
+    plt.show()
