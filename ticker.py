@@ -57,6 +57,7 @@ class Ticker :
             df['way'] = np.select(conditionlist, choicelist1, default='')
             df['price'] = np.select(conditionlist, choicelist2, default='')
             df['price'] = df['price'].astype(float, errors='ignore')
+            df['vma20'] = df['vma20'].astype(float, errors='ignore')
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             refine_df = None
@@ -128,10 +129,10 @@ class Ticker :
                     self.target_price =  self.simp_df.iloc[-1]['ma5']
                     self.losscut_price = self.simp_df.iloc[0]['price']
                     val_fromIdx, val_toIdx = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
-                    val_size = df[(val_fromIdx <= df['serial'])  &  (df['serial']  <= val_toIdx)]['value'].sum() / \
-                                (val_toIdx - val_fromIdx + 1) / \
-                                self.simp_df.iloc[0]['vma20']
-                    print_(self.name,f'val_size={val_size:,.2f}' )
+                    k1 = df[(val_fromIdx <= df['serial'])  &  (df['serial']  <= val_toIdx)]['value'].sum()
+                    k2 = self.simp_df.iloc[0]['vma20']
+                    val_size = k1 / (val_toIdx - val_fromIdx + 1) / k2
+                    print_(self.name,f'value_sum({val_fromIdx}~{val_toIdx})={k1:,.2f}, vma20={k2:,.2f}, valuesize={val_size:,.2f}')
                 else : 
                     self.target_price =  0  
             else :
@@ -166,10 +167,24 @@ class Ticker :
 
 if __name__ == "__main__":
     # t  = Ticker('KRW-NEAR')
-    t  = Ticker('KRW-NEAR')
+    t  = Ticker('KRW-TFUEL')
     # pd.set_option('display.max_columns', None)
     t.make_df()
+    x_df = t.df[t.df['way'] > '']
 
+    k =  x_df[(79 <= x_df['serial'])  &  (x_df['serial']  <= 93)]['value'].sum()  # 1,690,169,151.7059264
+    k1 = (93 - 79 + 1)  # 15
+    k2 = t.simp_df.iloc[0]['vma20']  # 1,920,725,301.8386574
+    k3 = 1690169151.7059264 /  15 / 1920725301.8386574
+    print(k)
+    print(k1)
+    print(k2)
+    print(k3)
+
+     
+    #   / \
+    #                             (val_toIdx - val_fromIdx + 1) / \
+    #                             self.simp_df.iloc[0]['vma20']
     # dataframe 출력하기
     # print(t.df.tail(30))
     # print(t.simp_df)
