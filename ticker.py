@@ -40,7 +40,7 @@ class Ticker :
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
 
-            df['vma20'] = df['value'].rolling(window=20).mean()
+            df['vma5'] = df['value'].rolling(window=5).mean()
             conditionlist = [
                             (df['close'] > df['ma5']) & \
                             (df['close'].shift(1) <= df['ma5'].shift(1)) & \
@@ -57,7 +57,7 @@ class Ticker :
             df['way'] = np.select(conditionlist, choicelist1, default='')
             df['price'] = np.select(conditionlist, choicelist2, default='')
             df['price'] = df['price'].astype(float, errors='ignore')
-            df['vma20'] = df['vma20'].astype(float, errors='ignore')
+            df['vma5'] = df['vma5'].astype(float, errors='ignore')
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             refine_df = None
@@ -94,14 +94,19 @@ class Ticker :
                     refine_df['p_d1_ser'] = refine_df['serial'].shift(-1)
                     refine_df['p_d2'] = refine_df['price'].shift(-2)
                     refine_df['p_d2_ser'] = refine_df['serial'].shift(-2)
+                    refine_df['p_d3'] = refine_df['price'].shift(-3)               
 
                     refine_df['p_d1'] = refine_df['p_d1'].astype(float, errors ='ignore')
                     refine_df['p_d2'] = refine_df['p_d2'].astype(float, errors ='ignore')
+                    refine_df['p_d3'] = refine_df['p_d3'].astype(float, errors ='ignore')
+
                     refine_df['p_d1_ser'] = refine_df['p_d1_ser'].astype(float, errors ='ignore')
                     refine_df['p_d2_ser'] = refine_df['p_d2_ser'].astype(float, errors ='ignore')
                     refine_df['price'] = refine_df['price'].astype(float, errors ='ignore')
                     refine_df['attack'] = refine_df.apply( 
-                        lambda row : 'good' if (row['way'] == 'up') and (row['price'] > (row['p_d2']*1.003)) else '' ,axis=1)
+                        lambda row : 'good' if (row['way'] == 'up') and \
+                                               (row['price'] > (row['p_d2']*1.003)) and \
+                                               (row['p_d1'] > row['p_d3']) else '' ,axis=1)
                 else :
                     refine_df = None
 
@@ -126,13 +131,23 @@ class Ticker :
                     (self.simp_df.iloc[0]['close'] < max(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
                     (self.simp_df.iloc[-2]['ma5']  < min(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
                     (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['close']) :
-                    self.target_price =  self.simp_df.iloc[-1]['ma5']
-                    self.losscut_price = self.simp_df.iloc[0]['price']
+                    # 5이평선이 우상향
+                    # 5이평돌파봉 다음봉은 고점이 돌파봉보다 높고 저점이 5이평보다 높아야함
+                    # 5이평돌파봉 다음다음봉도 조사시점현재 5이평보다 높아야함
                     val_fromIdx, val_toIdx = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
-                    k1 = df[(val_fromIdx <= df['serial'])  &  (df['serial']  <= val_toIdx)]['value'].sum()
-                    k2 = self.simp_df.iloc[0]['vma20']
-                    val_size = k1 / (val_toIdx - val_fromIdx + 1) / k2
-                    print_(self.name,f'value_sum({val_fromIdx}~{val_toIdx})={k1:,.2f}, vma20={k2:,.2f}, valuesize={val_size:,.2f}')
+                    k1 = self.df[(val_fromIdx <= self.df['serial']) & (self.df['serial'] < val_toIdx)]['value'].sum()
+                    k2 = self.df[(val_toIdx <= self.df['serial']) & (self.df['serial'] <= self.simp_df.iloc[0]['serial'])]['value'].sum()
+                    k3 = self.simp_df.iloc[0]['vma5']
+                    d1,d2 = val_toIdx-val_fromIdx, self.simp_df.iloc[0]['serial'] - val_toIdx + 1
+                    v1 = k1/d1/k3*100.0
+                    v2 = k2/d2/k3*100.0
+                    print_(self.name,f'Value  Asc:{k1:,.2f}/{d1}={v1:,.2f}% Desc:{k2:,.2f}/{d2}={v2:,.2f}%')
+                    if (d1 < 20)  and  (d2 < 20) :
+                        # 눌림일수와 직전상승일수가 20일이내 일것.
+                        self.target_price =  self.simp_df.iloc[-1]['ma5']
+                        self.losscut_price = self.simp_df.iloc[0]['price']
+                    else :
+                        pass
                 else : 
                     self.target_price =  0  
             else :
@@ -166,30 +181,10 @@ class Ticker :
         return pd.DataFrame(data_dict, index=index_list)
 
 if __name__ == "__main__":
-    # t  = Ticker('KRW-NEAR')
-    t  = Ticker('KRW-TFUEL')
+    t  = Ticker('KRW-KNC')
     # pd.set_option('display.max_columns', None)
     t.make_df()
-    x_df = t.df[t.df['way'] > '']
-
-    k =  x_df[(79 <= x_df['serial'])  &  (x_df['serial']  <= 93)]['value'].sum()  # 1,690,169,151.7059264
-    k1 = (93 - 79 + 1)  # 15
-    k2 = t.simp_df.iloc[0]['vma20']  # 1,920,725,301.8386574
-    k3 = 1690169151.7059264 /  15 / 1920725301.8386574
-    print(k)
-    print(k1)
-    print(k2)
-    print(k3)
-
-     
-    #   / \
-    #                             (val_toIdx - val_fromIdx + 1) / \
-    #                             self.simp_df.iloc[0]['vma20']
-    # dataframe 출력하기
-    # print(t.df.tail(30))
-    # print(t.simp_df)
-    # print(t.target_price)
-
+    # x_df = t.df[t.df['way'] > '']
     # # 표 그리기
     fillered_df = t.df[t.df['way'] > '']
     plt.figure(figsize=(9,5))
