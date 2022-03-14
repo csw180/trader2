@@ -32,8 +32,8 @@ class Ticker :
     def make_df(self) :
         try :
             # 기초 df (5분봉 100개)
-            df = pyupbit.get_ohlcv(self.name, count=100, interval='minute5')
-            if  len(df.index) < 100 :
+            df = pyupbit.get_ohlcv(self.name, count=150, interval='minute5')
+            if  len(df.index) < 150 :
                 self.df = None
                 return
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
@@ -42,15 +42,16 @@ class Ticker :
             df['vma5'] = df['value'].rolling(window=5).mean()
 
             df['ma50'] = df['close'].rolling(window=50).mean()
+            df['dispa50'] = (df['close'] - df['ma50']) / df['ma50']
+            df['max_dispa50'] = df['dispa50'].rolling(window=50).max()
+
             conditionlist = [
                             (df['close'] > df['ma5']) & \
                             (df['close'].shift(1) <= df['ma5'].shift(1)) & \
-                            (df['close'].shift(2) <= df['ma5'].shift(2)) & \
-                            (df['close'].shift(3) <= df['ma5'].shift(3))    ,\
+                            (df['close'].shift(2) <= df['ma5'].shift(2))   ,\
                             (df['close'] < df['ma5']) &\
                             (df['close'].shift(1) >= df['ma5'].shift(1)) &\
-                            (df['close'].shift(2) >= df['ma5'].shift(2)) &\
-                            (df['close'].shift(3) >= df['ma5'].shift(3)) \
+                            (df['close'].shift(2) >= df['ma5'].shift(2)) \
                             ]        
             choicelist1 = ['up', 'down']
             choicelist2 = [df['low'].rolling(4).min(),df['high'].rolling(4).max()]
@@ -59,6 +60,8 @@ class Ticker :
             df['price'] = np.select(conditionlist, choicelist2, default='')
             df['price'] = df['price'].astype(float, errors='ignore')
             df['vma5'] = df['vma5'].astype(float, errors='ignore')
+            df['dispa50'] = df['dispa50'].astype(float, errors='ignore')
+            df['max_dispa50'] = df['max_dispa50'].astype(float, errors='ignore')
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             refine_df = None
@@ -129,7 +132,7 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and \
-                    (self.simp_df.iloc[0]['close'] <= self.simp_df.iloc[0]['ma50']  ) and \
+                    (self.simp_df.iloc[0]['max_dispa50'] <= 5.0 ) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[0]['close'] < max(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
@@ -186,7 +189,7 @@ if __name__ == "__main__":
     t  = Ticker('KRW-MFT')
     pd.set_option('display.max_columns', None)
     t.make_df()
-    # print(t.df.tail(40))
+    print(t.df.tail(40))
     # t.df.to_excel('a.xlsx')
 
     # val_fromIdx, val_toIdx = t.df[t.df['serial']==92].index.tolist(), \
