@@ -39,8 +39,9 @@ class Ticker :
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
-
             df['vma5'] = df['value'].rolling(window=5).mean()
+
+            df['ma50'] = df['close'].rolling(window=50).mean()
             conditionlist = [
                             (df['close'] > df['ma5']) & \
                             (df['close'].shift(1) <= df['ma5'].shift(1)) & \
@@ -106,7 +107,7 @@ class Ticker :
                     refine_df['attack'] = refine_df.apply( 
                         lambda row : 'good' if (row['way'] == 'up') and \
                                                (row['price'] > (row['p_d2']*1.003)) and \
-                                               (row['p_d1'] > row['p_d3']) else '' ,axis=1)
+                                               (row['p_d1'] > row['p_d3']*1.003) else '' ,axis=1)
                 else :
                     refine_df = None
 
@@ -126,6 +127,7 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and \
+                    (self.simp_df.iloc[0]['close'] <= self.simp_df.iloc[0]['ma50']  ) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[0]['close'] < max(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
@@ -134,15 +136,22 @@ class Ticker :
                     # 5이평선이 우상향
                     # 5이평돌파봉 다음봉은 고점이 돌파봉보다 높고 저점이 5이평보다 높아야함
                     # 5이평돌파봉 다음다음봉도 조사시점현재 5이평보다 높아야함
-                    val_fromIdx, val_toIdx = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
-                    k1 = self.df[(val_fromIdx <= self.df['serial']) & (self.df['serial'] < val_toIdx)]['value'].sum()
-                    k2 = self.df[(val_toIdx <= self.df['serial']) & (self.df['serial'] <= self.simp_df.iloc[0]['serial'])]['value'].sum()
+                    from_serial, to_serial  = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
+                    now_serial = self.simp_df.iloc[0]['serial']
+                    print_(self.name,f'from_serial={from_serial}, to_serial={to_serial}, now_serial={now_serial}')
+                    val_fromIdx, val_toIdx, val_nowIdx = self.df[self.df['serial']==from_serial].index.tolist(), \
+                                    self.df[self.df['serial']==to_serial].index.tolist(), \
+                                    self.df[self.df['serial']==now_serial].index.tolist()
+                    print_(self.name,f'val_fromIdx={val_fromIdx[0]}, val_toIdx={val_toIdx[0]}, val_nowIdx={val_nowIdx[0]}')
+
+                    k1 = self.df[(val_fromIdx[0] <= self.df.index) & (self.df.index < val_toIdx[0])]['value'].sum()
+                    k2 = self.df[(val_toIdx[0] <= self.df.index) & (self.df.index <= val_nowIdx[0])]['value'].sum()
                     k3 = self.simp_df.iloc[0]['vma5']
-                    d1,d2 = val_toIdx-val_fromIdx, self.simp_df.iloc[0]['serial'] - val_toIdx + 1
+                    d1,d2 = to_serial - from_serial, now_serial - to_serial + 1
                     v1 = k1/d1/k3*100.0
                     v2 = k2/d2/k3*100.0
                     print_(self.name,f'Value  Asc:{k1:,.2f}/{d1}={v1:,.2f}% Desc:{k2:,.2f}/{d2}={v2:,.2f}%')
-                    if (d1 < 20)  and  (d2 < 20) :
+                    if (d1 < 14)  and  (d2 < 14) :
                         # 눌림일수와 직전상승일수가 20일이내 일것.
                         self.target_price =  self.simp_df.iloc[-1]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
@@ -181,14 +190,40 @@ class Ticker :
         return pd.DataFrame(data_dict, index=index_list)
 
 if __name__ == "__main__":
-    t  = Ticker('KRW-KNC')
-    # pd.set_option('display.max_columns', None)
+    t  = Ticker('KRW-MFT')
+    pd.set_option('display.max_columns', None)
     t.make_df()
+    # print(t.df.tail(40))
+    # t.df.to_excel('a.xlsx')
+
+    # val_fromIdx, val_toIdx = t.df[t.df['serial']==92].index.tolist(), \
+    #     t.df[t.df['serial']==96].index.tolist()
+    # # print(val_fromIdx[0].strftime('%m/%d/%Y, %r'),val_toIdx[0].strftime('%m/%d/%Y, %r'))
+    # print(len(val_fromIdx),len(val_toIdx))
+    # val_nowIdx = t.simp_df.iloc[0].index
+    # k1 = t.df[(val_fromIdx <= t.df.index) & (t.df.index < val_toIdx)]['value'].sum()
+    # k1 = t.df[val_fromIdx : val_toIdx]['value'].sum()
+
+    # print(k1)
+
+    # k2 = self.df[(val_toIdx <= self.df.index) & (self.df.index <= val_nowIdx)]['value'].sum()
+    # k3 = self.simp_df.iloc[0]['vma5']
+    # d1,d2 = self.simp_df.iloc[0]['p_d1_ser'] - self.simp_df.iloc[0]['p_d2_ser'],  \
+    #         self.simp_df.iloc[0]['serial'] - self.simp_df.iloc[0]['p_d1_ser'] + 1
+    # v1 = k1/d1/k3*100.0
+    # v2 = k2/d2/k3*100.0
+
+    # t.df.to_excel('a.xlsx')
     # x_df = t.df[t.df['way'] > '']
     # # 표 그리기
+    # val_fromIdx, val_toIdx = t.simp_df.iloc[0]['p_d2_ser'], t.simp_df.iloc[0]['p_d1_ser']
+    # k1 = t.df[(80 <= t.df['serial']) & (t.df['serial'] < 92)]['value'].sum()
+    # print(k1)
+
     fillered_df = t.df[t.df['way'] > '']
     plt.figure(figsize=(9,5))
     plt.plot(t.df.index, t.df['ma5'], label="MA5")
+    plt.plot(t.df.index, t.df['ma50'], label="MA50")
     plt.plot(fillered_df.index, fillered_df['price'], label="Price")
     plt.plot(t.df.index, t.df['close'], label="close")
     plt.legend(loc='best')
