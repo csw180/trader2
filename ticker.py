@@ -90,7 +90,7 @@ class Ticker :
                         refine_df = self.process_trickery(trickery_list).copy()
                     else :
                         refine_df = pd.concat([refine_df,self.process_trickery(trickery_list)])
-                if  len(refine_df.index) > 2 :    
+                if  len(refine_df.index) > 3 :    
                     refine_df['p_d1'] = refine_df['price'].shift(-1)
                     refine_df['p_d1_ser'] = refine_df['serial'].shift(-1)
                     refine_df['p_d2'] = refine_df['price'].shift(-2)
@@ -124,6 +124,8 @@ class Ticker :
             df = self.df.copy()
             df = df[df.index >= todaystr]
             goodidx = df.index[df['attack']=='good'].tolist()
+            self.target_price =  0  
+
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and \
@@ -151,17 +153,10 @@ class Ticker :
                     v1 = k1/d1/k3*100.0
                     v2 = k2/d2/k3*100.0
                     print_(self.name,f'Value  Asc:{k1:,.2f}/{d1}={v1:,.2f}% Desc:{k2:,.2f}/{d2}={v2:,.2f}%')
-                    if (d1 < 14)  and  (d2 < 14) :
-                        # 눌림일수와 직전상승일수가 20일이내 일것.
-                        self.target_price =  self.simp_df.iloc[-1]['ma5']
-                        self.losscut_price = self.simp_df.iloc[0]['price']
-                    else :
-                        pass
-                else : 
-                    self.target_price =  0  
-            else :
-                self.target_price =  0  
-
+                    # if (d1 < 14)  and  (d2 < 14) :
+                    #     # 눌림일수와 직전상승일수가 20일이내 일것.
+                    self.target_price =  self.simp_df.iloc[-1]['ma5']
+                    self.losscut_price = self.simp_df.iloc[0]['price']
         except TypeError as te :
             print_(self.name,'make_df: te={te}')
             self.df = None
