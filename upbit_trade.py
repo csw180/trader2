@@ -38,14 +38,9 @@ def get_balance(ticker):
 def get_balances():
     """잔고 조회(보유종목전체)"""
     ret_list = []
-    tmp_dict = {}
-    for k,v in dict_balances:
-        tmp_dict.clear()
+    for k,v in dict_balances.items() :
         if k != 'KRW' :
-            tmp_dict['currency'] = v['currency']
-            tmp_dict['balance'] = v['balance']
-            tmp_dict['avg_buy_price'] = v['avg_buy_price']
-            ret_list.append(tmp_dict)
+            ret_list.append(v.copy())
     return ret_list
 
 def get_avg_buy_price(ticker):
