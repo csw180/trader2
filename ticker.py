@@ -153,8 +153,6 @@ class Ticker :
                     v1 = k1/d1/k3*100.0
                     v2 = k2/d2/k3*100.0
                     print_(self.name,f'Value  Asc:{k1:,.2f}/{d1}={v1:,.2f}% Desc:{k2:,.2f}/{d2}={v2:,.2f}%')
-                    # if (d1 < 14)  and  (d2 < 14) :
-                    #     # 눌림일수와 직전상승일수가 20일이내 일것.
                     self.target_price =  self.simp_df.iloc[-1]['ma5']
                     self.losscut_price = self.simp_df.iloc[0]['price']
         except TypeError as te :
