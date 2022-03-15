@@ -83,8 +83,8 @@ while  True :
                 while trys > 0 :
                     trys -= 1
                     current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
-                    print_(t.name,f'buy_{trys}: Target(*1.005)={t.target_price:,.4f}({t.target_price*1.005:,.4f}), curr_price={current_price:,.4f}')
-                    if t.target_price * 1.0025 > current_price:
+                    print_(t.name,f'buy_{trys}: Target(*1.003)={t.target_price:,.4f}({t.target_price*1.003:,.4f}), curr_price={current_price:,.4f}')
+                    if t.target_price * 1.003 > current_price:
                         krw = upbit_trade.get_balance("KRW")
                         print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} limit:{(100000 if krw >= 100000 else krw):,.4f}')
                         if (krw > 5000)  and  (krw > current_price):
