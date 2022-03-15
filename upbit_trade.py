@@ -22,7 +22,7 @@ def init() :
         with open('balances.json') as f:
             dict_balances = json.load(f)
     else : 
-        data1 = {'currency': 'KRW', 'balance': '100000', 'avg_buy_price': '0'}
+        data1 = {'currency': 'KRW', 'balance': '1000000', 'avg_buy_price': '0'}
         dict_balances = {'KRW': data1}
         with open('balances.json', 'w') as f:
             json.dump(dict_balances, f)
@@ -55,8 +55,9 @@ def  sell_limit_order(ticker,price,amount) :
     print_(ticker,f'sell_limit_order {price:,.4f}, {amount:,.4f}')
     try :
         t = dict_balances[ticker]
-        t['balance'] -= amount
-        if t['balance'] <= 0 :
+        balance =  float(t['balance'])
+        t['balance'] = balance + amount
+        if balance <= 0 :
             del dict_balances[ticker]
         with open('balances.json', 'w') as f:
             json.dump(dict_balances, f)
@@ -66,10 +67,14 @@ def  sell_limit_order(ticker,price,amount) :
     
 def  buy_limit_order(ticker,price,amount) :
     print_(ticker,f'buy_limit_order {price:,.4f}, {amount:,.4f}')
+    balance = 0.0
+    avg_buy_price = 0.0
     try :
         t = dict_balances[ticker]
-        t['balance'] += amount
-        t['avg_buy_price'] = (t['avg_buy_price'] + price) / t['balance']
+        balance =  float(t['balance'])
+        avg_buy_price =  float(t['avg_buy_price'])
+        t['balance'] = balance + amount
+        t['avg_buy_price'] = (avg_buy_price + price) / balance
     except KeyError as ke :
         dict_tmp = {}
         dict_tmp['currency'] = ticker
