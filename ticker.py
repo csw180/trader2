@@ -132,7 +132,7 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 if  (len(self.simp_df.index) == 3) and \
-                    (self.simp_df.iloc[0]['max_dispa50'] <= 5.0 ) and \
+                    (self.simp_df.iloc[0]['max_dispa50'] * 100 <= 5.0 ) and \
                     (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[0]['close'] < max(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
