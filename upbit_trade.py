@@ -27,10 +27,10 @@ def init() :
         with open('balances.json', 'w') as f:
             json.dump(dict_balances, f)
 
-def get_balance(ticker):
+def get_balance(currency):
     """잔고 조회(한종목)"""
     try :
-        t = dict_balances[ticker]
+        t = dict_balances[currency]
         return float(t['balance'])
     except KeyError as ke :
         return 0
@@ -43,22 +43,23 @@ def get_balances():
             ret_list.append(v.copy())
     return ret_list
 
-def get_avg_buy_price(ticker):
+def get_avg_buy_price(currency):
     """매수평균가"""
     try :
-        t = dict_balances[ticker]
+        t = dict_balances[currency]
         return float(t['avg_buy_price'])
     except KeyError as ke :
         return 0
 
 def  sell_limit_order(ticker,price,amount) :
     print_(ticker,f'sell_limit_order {price:,.4f}, {amount:,.4f}')
+    currency = ticker[ticker.find('-')+1:]
     try :
-        t = dict_balances[ticker]
+        t = dict_balances[currency]
         balance =  float(t['balance'])
         t['balance'] = balance - amount
         if balance <= 0 :
-            del dict_balances[ticker]
+            del dict_balances[currency]
         
         t = dict_balances['KRW']
         balance =  float(t['balance'])
@@ -71,18 +72,19 @@ def  sell_limit_order(ticker,price,amount) :
     
 def  buy_limit_order(ticker,price,amount) :
     print_(ticker,f'buy_limit_order {price:,.4f}, {amount:,.4f}')
+    currency = ticker[ticker.find('-')+1:]
     try :
-        t = dict_balances[ticker]
+        t = dict_balances[currency]
         balance =  float(t['balance'])
         avg_buy_price =  float(t['avg_buy_price'])
         t['balance'] = balance + amount
         t['avg_buy_price'] = (avg_buy_price + price) / balance
     except KeyError as ke :
         dict_tmp = {}
-        dict_tmp['currency'] = ticker
+        dict_tmp['currency'] = currency
         dict_tmp['balance'] = amount
         dict_tmp['avg_buy_price'] = price
-        dict_balances[ticker] = dict_tmp
+        dict_balances[currency] = dict_tmp
 
     t = dict_balances['KRW']
     balance =  float(t['balance'])
