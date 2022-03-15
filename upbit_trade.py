@@ -67,8 +67,6 @@ def  sell_limit_order(ticker,price,amount) :
     
 def  buy_limit_order(ticker,price,amount) :
     print_(ticker,f'buy_limit_order {price:,.4f}, {amount:,.4f}')
-    balance = 0.0
-    avg_buy_price = 0.0
     try :
         t = dict_balances[ticker]
         balance =  float(t['balance'])
