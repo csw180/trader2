@@ -56,7 +56,7 @@ def  sell_limit_order(ticker,price,amount) :
     try :
         t = dict_balances[ticker]
         balance =  float(t['balance'])
-        t['balance'] = balance + amount
+        t['balance'] = balance - amount
         if balance <= 0 :
             del dict_balances[ticker]
         with open('balances.json', 'w') as f:
