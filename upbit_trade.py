@@ -59,6 +59,11 @@ def  sell_limit_order(ticker,price,amount) :
         t['balance'] = balance - amount
         if balance <= 0 :
             del dict_balances[ticker]
+        
+        t = dict_balances['KRW']
+        balance =  float(t['balance'])
+        t['balance'] = balance + (price * amount)
+
         with open('balances.json', 'w') as f:
             json.dump(dict_balances, f)
     except KeyError as ke :
@@ -79,6 +84,11 @@ def  buy_limit_order(ticker,price,amount) :
         dict_tmp['balance'] = amount
         dict_tmp['avg_buy_price'] = price
         dict_balances[ticker] = dict_tmp
+
+    t = dict_balances['KRW']
+    balance =  float(t['balance'])
+    t['balance'] = balance - (price * amount)
+
     with open('balances.json', 'w') as f:
         json.dump(dict_balances, f)
     print_('',dict_balances)
