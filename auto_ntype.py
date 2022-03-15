@@ -87,8 +87,8 @@ while  True :
                     if t.target_price * 1.0025 > current_price:
                         krw = upbit_trade.get_balance("KRW")
                         print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} limit:{(100000 if krw >= 100000 else krw):,.4f}')
-                        if krw > 5000:
-                            upbit_trade.buy_limit_order(t.name, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
+                        if (krw > 5000)  and  (krw > current_price):
+                            upbit_trade.buy_limit_order(t.currency, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
                             break
                     time.sleep(1)
             time.sleep(1)

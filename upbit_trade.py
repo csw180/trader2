@@ -68,7 +68,6 @@ def  sell_limit_order(ticker,price,amount) :
             json.dump(dict_balances, f)
     except KeyError as ke :
         print_(ticker,f'sell_limit_order ticker not found {ke}')
-    print_('',dict_balances)
     
 def  buy_limit_order(ticker,price,amount) :
     print_(ticker,f'buy_limit_order {price:,.4f}, {amount:,.4f}')
@@ -91,10 +90,9 @@ def  buy_limit_order(ticker,price,amount) :
 
     with open('balances.json', 'w') as f:
         json.dump(dict_balances, f)
-    print_('',dict_balances)
 
 init()
 
 if __name__ == "__main__":
     init()
-    print(dict_balances)
+    buy_limit_order('WAVES',32420,0)
