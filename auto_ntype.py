@@ -3,7 +3,9 @@ import pyupbit
 import pandas as pd
 import datetime as dt
 from ticker import Ticker
-import upbit_trade
+import account
+# upbit 실계좌를 활용할경우
+# import upbit_account 로 대체
 
 def print_(ticker,msg)  :
     if  ticker :
@@ -48,7 +50,7 @@ while  True :
     loop_cnt +=1
     try : 
         current_time = dt.datetime.now()
-        balances = upbit_trade.get_balances()
+        balances = account.get_balances()
         if  (len(balances)==0) and  (current_time > next_time) :  # 주기적으로 거래량top10 종목들 재갱신
             next_time = current_time + dt.timedelta(hours=2)
             tickers = best_volume_tickers()
@@ -60,15 +62,15 @@ while  True :
 
         for t in  tickers :  
             # 이미 잔고가 있는 종목은 목표가에 왔는지 확인하고 즉시 매도 처리 한다.
-            btc=upbit_trade.get_balance(t.currency)
+            btc=account.get_balance(t.currency)
             if  btc > 0 :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["bid_price"])
-                avg_buy_price = upbit_trade.get_avg_buy_price(t.currency)
+                avg_buy_price = account.get_avg_buy_price(t.currency)
                 if  loop_cnt >= print_loop :
                     print_(t.name,f'sell_balance(btc):{btc}, avg:p-cut:l-cut = {avg_buy_price:,.4f}:{avg_buy_price*1.006:,.4f}:{max(avg_buy_price * 0.985,t.losscut_price):,.4f}, curr_price= {current_price:,.4f}')
                 if  ( current_price > avg_buy_price * 1.006 ) or \
                     ( current_price < max(avg_buy_price * 0.985,t.losscut_price) ) :
-                    upbit_trade.sell_limit_order(t.name, current_price, btc )
+                    account.sell_limit_order(t.name, current_price, btc )
                 continue
 
             t.make_df()
@@ -85,10 +87,10 @@ while  True :
                     current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
                     print_(t.name,f'buy_{trys}: Target(*1.003)={t.target_price:,.4f}({t.target_price*1.003:,.4f}), curr_price={current_price:,.4f}')
                     if t.target_price * 1.003 > current_price:
-                        krw = upbit_trade.get_balance("KRW")
+                        krw = account.get_balance("KRW")
                         print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} limit:{(100000 if krw >= 100000 else krw):,.4f}')
                         if (krw > 5000)  and  (krw > current_price):
-                            upbit_trade.buy_limit_order(t.name, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
+                            account.buy_limit_order(t.name, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
                             break
                     time.sleep(1)
             time.sleep(1)
