@@ -110,7 +110,7 @@ class Ticker :
                     refine_df['attack'] = refine_df.apply( 
                         lambda row : 'good' if (row['way'] == 'up') and \
                                                (row['price'] > (row['p_d2']*1.003)) and \
-                                               (row['p_d1'] < row['p_d3']*1.003) else '' ,axis=1)
+                                               (row['p_d1'] * 1.003 < row['p_d3']) else '' ,axis=1)
                 else :
                     refine_df = None
 
