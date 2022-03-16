@@ -110,7 +110,7 @@ class Ticker :
                     refine_df['attack'] = refine_df.apply( 
                         lambda row : 'good' if (row['way'] == 'up') and \
                                                (row['price'] > (row['p_d2']*1.003)) and \
-                                               (row['p_d1'] > row['p_d3']*1.003) else '' ,axis=1)
+                                               (row['p_d1'] < row['p_d3']*1.003) else '' ,axis=1)
                 else :
                     refine_df = None
 
@@ -156,7 +156,7 @@ class Ticker :
                     v1 = k1/d1/k3*100.0
                     v2 = k2/d2/k3*100.0
                     print_(self.name,f'Value  Asc:{k1:,.2f}/{d1}={v1:,.2f}% Desc:{k2:,.2f}/{d2}={v2:,.2f}%')
-                    if  (d1 < 15)  and (d2 < 15) :
+                    if  d1 < 15 :
                         self.target_price =  self.simp_df.iloc[-1]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
         except TypeError as te :
