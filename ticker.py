@@ -46,12 +46,12 @@ class Ticker :
             df['max_dispa50'] = df['dispa50'].rolling(window=50).max()
 
             conditionlist = [
-                            (df['close'] > df['ma5']) & \
-                            (df['close'].shift(1) <= df['ma5'].shift(1)) & \
-                            (df['close'].shift(2) <= df['ma5'].shift(2))   ,\
-                            (df['close'] < df['ma5']) &\
-                            (df['close'].shift(1) >= df['ma5'].shift(1)) &\
-                            (df['close'].shift(2) >= df['ma5'].shift(2)) \
+                            ((df['low']+df['high'])/2 > df['ma5']) & \
+                            ((df['low'].shift(1) + df['high'].shift(1))/2 <= df['ma5'].shift(1)) & \
+                            ((df['low'].shift(2) + df['high'].shift(2))/2 <= df['ma5'].shift(2))   ,\
+                            ((df['low']+df['high'])/2 < df['ma5']) &\
+                            ((df['low'].shift(1) + df['high'].shift(1))/2 >= df['ma5'].shift(1)) &\
+                            ((df['low'].shift(2) + df['high'].shift(2))/2 >= df['ma5'].shift(2)) \
                             ]        
             choicelist1 = ['up', 'down']
             choicelist2 = [df['low'].rolling(4).min(),df['high'].rolling(4).max()]
