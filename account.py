@@ -18,7 +18,8 @@ def init() :
             dict_balances = json.load(f)
     else : 
         data1 = {'currency': 'KRW', 'balance': '1000000', 'avg_buy_price': '0'}
-        dict_balances = {'KRW': data1}
+        history = []
+        dict_balances = {'KRW': data1,'history':history}
         with open('balances.json', 'w') as f:
             json.dump(dict_balances, f)
 
@@ -53,6 +54,17 @@ def  sell_limit_order(ticker,price,amount) :
         t = dict_balances[currency]
         balance =  float(t['balance'])
         t['balance'] = balance - amount
+
+        historys = dict_balances['history']
+        history = []
+        history.append(dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        history.append('SELL')
+        history.append(currency)
+        history.append(amount)
+        history.append(price)
+        historys.append(history)
+        dict_balances['history'] = historys
+
         if (balance - amount) <= 0 :
             del dict_balances[currency]
         
@@ -80,6 +92,16 @@ def  buy_limit_order(ticker,price,amount) :
         dict_tmp['balance'] = amount
         dict_tmp['avg_buy_price'] = price
         dict_balances[currency] = dict_tmp
+
+    historys = dict_balances['history']
+    history = []
+    history.append(dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    history.append('BUY')
+    history.append(currency)
+    history.append(amount)
+    history.append(price)
+    historys.append(history)
+    dict_balances['history'] = historys
 
     t = dict_balances['KRW']
     balance =  float(t['balance'])
