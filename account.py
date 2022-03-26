@@ -35,7 +35,7 @@ def get_balances():
     """잔고 조회(보유종목전체)"""
     ret_list = []
     for k,v in dict_balances.items() :
-        if k != 'KRW' :
+        if (k != 'KRW')  and (k != 'history'):
             ret_list.append(v.copy())
     return ret_list
 
