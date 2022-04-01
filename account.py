@@ -1,8 +1,17 @@
 import datetime as dt
 import json
 import os
+import pyupbit
+
+_UPBIT_ENABLE = False
 
 dict_balances = {}
+access = "Oug97pOTCd6xN12mREWTo9GTQcmkzhMtnoW2Wqyo"          # 본인 값으로 변경
+secret = "6IUBTLNU02rSGQux5cIMW11W05WnoW5rRKxxSE6Z"          # 본인 값으로 변경
+upbit = None
+
+if  _UPBIT_ENABLE :
+    upbit = pyupbit.Upbit(access, secret)
 
 def print_(ticker,msg)  :
     if  ticker :
@@ -39,6 +48,13 @@ def get_balances():
             ret_list.append(v.copy())
     return ret_list
 
+def get_tot_buy_price() :
+    ret = 0 
+    for k,v in dict_balances.items() :
+        if (k != 'KRW')  and (k != 'history'):
+            ret = ret + (v['balance']*v['avg_buy_price'])
+    return ret
+
 def get_avg_buy_price(currency):
     """매수평균가"""
     try :
@@ -54,6 +70,11 @@ def  sell_limit_order(ticker,price,amount) :
         t = dict_balances[currency]
         balance =  float(t['balance'])
         t['balance'] = balance - amount
+
+        if  _UPBIT_ENABLE :
+            ret = upbit.sell_limit_order(ticker, price, amount)
+            print_(ticker,f'upbit sell_limit_order {price:,.4f}, {amount:,.4f}')
+            print_(ticker,f'upbit sell_limit_order ret = {ret}')
 
         historys = dict_balances['history']
         history = []
@@ -92,6 +113,11 @@ def  buy_limit_order(ticker,price,amount) :
         dict_tmp['balance'] = amount
         dict_tmp['avg_buy_price'] = price
         dict_balances[currency] = dict_tmp
+    
+    if  _UPBIT_ENABLE :
+        ret = upbit.buy_limit_order(ticker, price, amount )
+        print_(ticker,f'upbit buy_limit_order {price:,.4f}, {amount:,.4f}')
+        print_(ticker,f'upbit buy_limit_order ret = {ret}')
 
     historys = dict_balances['history']
     history = []
@@ -114,4 +140,5 @@ init()
 
 if __name__ == "__main__":
     init()
-    buy_limit_order('WAVES',32420,0)
+    tot = get_tot_buy_price()
+    print('%d' % tot)

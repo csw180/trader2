@@ -7,6 +7,9 @@ import account
 # upbit 실계좌를 활용할경우
 # import upbit_account 로 대체
 
+_MAX_SEEDS = 1000000   # 이 전략으로 운용하는 전체 금액
+_MAX_A_BUY = 200000    # 한번의 매수 최대금액
+
 def print_(ticker,msg)  :
     if  ticker :
         ret = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')+'#'+ticker+'# '+msg
@@ -44,7 +47,7 @@ current_time = dt.datetime.now()
 next_time = current_time + dt.timedelta(hours=2)
 
 loop_cnt = 0
-print_loop = 10
+print_loop = 50
 # 자동매매 시작
 while  True :
     loop_cnt +=1
@@ -79,20 +82,21 @@ while  True :
                 print_(t.name,'-------- Simple DataFrame ---------')
                 print(t.simp_df,flush=True)
                 print_(t.name,'-----------------------------------')
-            
-            if t.target_price > 0 :
-                trys = 60
-                while trys > 0 :
-                    trys -= 1
-                    current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
-                    print_(t.name,f'buy_{trys}: Target(*1.003)={t.target_price:,.4f}({t.target_price*1.003:,.4f}), curr_price={current_price:,.4f}')
-                    if t.target_price * 1.003 > current_price:
-                        krw = account.get_balance("KRW")
-                        print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} limit:{(100000 if krw >= 100000 else krw):,.4f}')
-                        if (krw > 5000)  and  (krw > current_price):
-                            account.buy_limit_order(t.name, current_price, ((100000 if krw >= 100000 else krw) * 0.999)//current_price )
-                            break
-                    time.sleep(1)
+                buy_enable_balance =  _MAX_SEEDS - account.get_tot_buy_price()
+                if buy_enable_balance > 0 :
+                    trys = 60
+                    while trys > 0 :
+                        trys -= 1
+                        current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
+                        print_(t.name,f'buy_{trys}: Target(*1.003)={t.target_price:,.4f}({t.target_price*1.003:,.4f}), curr_price={current_price:,.4f}')
+                        if t.target_price * 1.003 > current_price:
+                            krw = account.get_balance("KRW")
+                            amount = min(buy_enable_balance,krw,_MAX_A_BUY)// current_price
+                            print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} current_price {current_price:,.4} enabled amount :{amount:,.4f}')
+                            if (krw > 5000)  and  (amount > 0):
+                                account.buy_limit_order(t.name, current_price, amount )
+                                break
+                        time.sleep(1)
             time.sleep(1)
 
     except Exception as e:
