@@ -35,7 +35,7 @@ class Ticker :
             df = pyupbit.get_ohlcv(self.name, count=150, interval='minute5')
             if  len(df.index) < 150 :
                 self.df = None
-                return
+                return 'step1'
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
@@ -118,7 +118,7 @@ class Ticker :
 
             if (df is None) or (refine_df is None) :
                 self.df = None
-                return False
+                return 'step2'
 
             # 기초 df 와 refine_df 를 join 한다.
             df = df.drop(['way','price','serial'],axis = 1)
@@ -136,7 +136,7 @@ class Ticker :
                 # iloc index 0 : 5일선돌파봉, 1 : 돌파봉의 다음봉, 2 : 돌파봉의 다음다음봉
                 if  (len(self.simp_df.index) == 3) and \
                     (self.simp_df.iloc[0]['max_dispa50'] * 100 <= 5.0 ) and \
-                    (self.simp_df.iloc[0]['open'] * 1.02 < self.simp_df.iloc[0]['ma50'] ) and \
+                    (self.simp_df.iloc[0]['open'] * 1.01 < self.simp_df.iloc[0]['ma50'] ) and \
                     (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[0]['high'] < self.simp_df.iloc[1]['high']) and \
@@ -163,10 +163,18 @@ class Ticker :
                     if  d1 < 15 :
                         self.target_price =  self.simp_df.iloc[2]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
+                    else :
+                        return 'step6'
+                else :
+                    return 'step4'
+            else :
+                return 'step3'
         except TypeError as te :
             print_(self.name,'make_df: te={te}')
             self.df = None
             self.simp_df = None
+            return 'step7'
+        return 'success'
 
     def  process_trickery(self,trickery_list) :
         index_list = []

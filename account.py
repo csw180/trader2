@@ -24,7 +24,7 @@ def init() :
     global dict_balances
     if  os.path.isfile('balances.json') :
         with open('balances.json') as f:
-            dict_balances = json.load(f)
+            dict_balances = dict(json.load(f))
     else : 
         data1 = {'currency': 'KRW', 'balance': '1000000', 'avg_buy_price': '0'}
         history = []

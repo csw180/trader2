@@ -47,7 +47,7 @@ current_time = dt.datetime.now()
 next_time = current_time + dt.timedelta(hours=2)
 
 loop_cnt = 0
-print_loop = 50
+print_loop = 20
 # 자동매매 시작
 while  True :
     loop_cnt +=1
@@ -69,7 +69,7 @@ while  True :
             if  btc > 0 :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["bid_price"])
                 avg_buy_price = account.get_avg_buy_price(t.currency)
-                if  loop_cnt >= print_loop :
+                if  loop_cnt == print_loop :
                     print_(t.name,f'sell_balance(btc):{btc}, avg:p-cut:l-cut = {avg_buy_price:,.4f}:{avg_buy_price*1.006:,.4f}:{max(avg_buy_price * 0.985,t.losscut_price):,.4f}, curr_price= {current_price:,.4f}')
                 if  ( current_price > avg_buy_price * 1.006 ) or \
                     ( current_price < max(avg_buy_price * 0.985,t.losscut_price) ) :
@@ -83,17 +83,18 @@ while  True :
                 print(t.simp_df,flush=True)
                 print_(t.name,'-----------------------------------')
                 buy_enable_balance =  _MAX_SEEDS - account.get_tot_buy_price()
-                if buy_enable_balance > 0 :
+                krw = account.get_balance("KRW")
+                print_(t.name,f'KRW : {krw}, usable : {buy_enable_balance}')
+                if (buy_enable_balance > 0) and (krw > 5000):
                     trys = 60
                     while trys > 0 :
                         trys -= 1
                         current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
                         print_(t.name,f'buy_{trys}: Target(*1.003)={t.target_price:,.4f}({t.target_price*1.003:,.4f}), curr_price={current_price:,.4f}')
                         if t.target_price * 1.003 > current_price:
-                            krw = account.get_balance("KRW")
-                            amount = min(buy_enable_balance,krw,_MAX_A_BUY)// current_price
-                            print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} current_price {current_price:,.4} enabled amount :{amount:,.4f}')
-                            if (krw > 5000)  and  (amount > 0):
+                            amount = min(buy_enable_balance,krw,_MAX_A_BUY) // current_price
+                            print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} current_price {current_price:,.4} amount :{amount:,.4f}')
+                            if amount > 0:
                                 account.buy_limit_order(t.name, current_price, amount )
                                 break
                         time.sleep(1)
