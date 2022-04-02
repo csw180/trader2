@@ -94,7 +94,7 @@ def  sell_limit_order(ticker,price,amount) :
         t['balance'] = balance + (price * amount)
 
         with open('balances.json', 'w') as f:
-            json.dump(dict_balances, f)
+            json.dump(sorted(dict_balances.items(), key=lambda item: 0 if item[0]!='history' else 1), f)
     except KeyError as ke :
         print_(ticker,f'sell_limit_order ticker not found {ke}')
     
@@ -134,7 +134,7 @@ def  buy_limit_order(ticker,price,amount) :
     t['balance'] = balance - (price * amount)
 
     with open('balances.json', 'w') as f:
-        json.dump(dict_balances, f)
+        json.dump(sorted(dict_balances.items(), key=lambda item: 0 if item[0]!='history' else 1), f)
 
 init()
 

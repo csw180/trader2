@@ -133,14 +133,15 @@ class Ticker :
 
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
+                # iloc index 0 : 5일선돌파봉, 1 : 돌파봉의 다음봉, 2 : 돌파봉의 다음다음봉
                 if  (len(self.simp_df.index) == 3) and \
                     (self.simp_df.iloc[0]['max_dispa50'] * 100 <= 5.0 ) and \
-                    (self.simp_df.iloc[0]['open'] * 1.005 < self.simp_df.iloc[0]['ma50'] ) and \
-                    (self.simp_df.iloc[-1]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[-2]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[0]['close'] < max(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
-                    (self.simp_df.iloc[-2]['ma5']  < min(self.simp_df.iloc[-2]['close'],self.simp_df.iloc[-2]['open'])) and \
-                    (self.simp_df.iloc[-1]['ma5'] <= self.simp_df.iloc[-1]['close']) :
+                    (self.simp_df.iloc[0]['open'] * 1.02 < self.simp_df.iloc[0]['ma50'] ) and \
+                    (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[0]['high'] < self.simp_df.iloc[1]['high']) and \
+                    (self.simp_df.iloc[0]['low']  < self.simp_df.iloc[1]['low']) and \
+                    (self.simp_df.iloc[2]['ma5'] < self.simp_df.iloc[2]['low']) :
                     # 5이평선이 우상향
                     # 5이평돌파봉 다음봉은 고점이 돌파봉보다 높고 저점이 5이평보다 높아야함
                     # 5이평돌파봉 다음다음봉도 조사시점현재 5이평보다 높아야함
@@ -158,9 +159,9 @@ class Ticker :
                     d1,d2 = to_serial - from_serial, now_serial - to_serial + 1
                     v1 = k1/d1/k3*100.0
                     v2 = k2/d2/k3*100.0
-                    print_(self.name,f'Value  Asc:{k1:,.2f}/{d1}={v1:,.2f}% Desc:{k2:,.2f}/{d2}={v2:,.2f}%')
+                    print_(self.name,f'Value  Asc course:{k1:,.2f}/{d1}={v1:,.2f}% Desc course:{k2:,.2f}/{d2}={v2:,.2f}%')
                     if  d1 < 15 :
-                        self.target_price =  self.simp_df.iloc[-1]['ma5']
+                        self.target_price =  self.simp_df.iloc[2]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
         except TypeError as te :
             print_(self.name,'make_df: te={te}')
