@@ -31,7 +31,7 @@ class Ticker :
 
     def make_df(self) :
         try :
-            # 기초 df (5분봉 100개)
+            # 기초 df (5분봉 150개)
             df = pyupbit.get_ohlcv(self.name, count=150, interval='minute5')
             if  len(df.index) < 150 :
                 self.df = None
@@ -191,7 +191,7 @@ class Ticker :
         return pd.DataFrame(data_dict, index=index_list)
 
 if __name__ == "__main__":
-    t  = Ticker('KRW-MFT')
+    t  = Ticker('KRW-ZIL')
     pd.set_option('display.max_columns', None)
     t.make_df()
     print(t.df.tail(40))
