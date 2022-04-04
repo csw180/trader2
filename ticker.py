@@ -32,10 +32,13 @@ class Ticker :
     def make_df(self) :
         try :
             # 기초 df (5분봉 150개)
+            self.df = None
+            self.target_price =  0  
+            self.losscut_price = 0
+
             df = pyupbit.get_ohlcv(self.name, count=150, interval='minute5')
             if  len(df.index) < 150 :
-                self.df = None
-                return 'step1'
+                return 'Need 150 5minutes-stick'
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
             df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
@@ -67,7 +70,6 @@ class Ticker :
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             refine_df = None
-
             df_copy = df.copy()
             df_copy = df_copy[df_copy['way'] > '']
 
@@ -114,11 +116,9 @@ class Ticker :
                                                (row['price'] > (row['p_d2']*1.005)) and \
                                                (row['p_d1'] * 1.005 < row['p_d3']) else '' ,axis=1)
                 else :
-                    refine_df = None
-
-            if (df is None) or (refine_df is None) :
-                self.df = None
-                return 'step2'
+                    return f'Not enough Turning-Point {len(refine_df.index)}. May not > 3'
+            else :
+                return 'Nothing Turning-Point'
 
             # 기초 df 와 refine_df 를 join 한다.
             df = df.drop(['way','price','serial'],axis = 1)
@@ -129,7 +129,6 @@ class Ticker :
             df = self.df.copy()
             df = df[df.index >= todaystr]
             goodidx = df.index[df['attack']=='good'].tolist()
-            self.target_price =  0  
 
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
@@ -177,16 +176,16 @@ class Ticker :
                         self.target_price =  self.simp_df.iloc[2]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
                     else :
-                        return 'step6'
+                        return f'Ascending stick {d1} Maybe not < 15'
                 else :
-                    return 'step4'
+                    return f'Already or Yet! len(simp_df)={len(self.simp_df.index)} Maybe not 3'
             else :
-                return 'step3'
+                return 'Not found good Attack-Point'
         except TypeError as te :
             print_(self.name,'make_df: te={te}')
             self.df = None
             self.simp_df = None
-            return 'step7'
+            return 'TypeError'
         return 'success'
 
     def  process_trickery(self,trickery_list) :

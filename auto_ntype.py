@@ -47,7 +47,7 @@ current_time = dt.datetime.now()
 next_time = current_time + dt.timedelta(hours=2)
 
 loop_cnt = 0
-print_loop = 10
+print_loop = 20
 # 자동매매 시작
 while  True :
     loop_cnt +=1
@@ -76,7 +76,7 @@ while  True :
                     account.sell_limit_order(t.name, current_price, btc )
                 continue
 
-            t.make_df()
+            ret = t.make_df()
             if t.target_price > 0 :
                 buy_enable_balance =  _MAX_SEEDS - account.get_tot_buy_price()
                 krw = account.get_balance("KRW")
@@ -93,10 +93,10 @@ while  True :
                             if amount > 0:
                                 account.buy_limit_order(t.name, current_price, amount )
                                 break
-                        time.sleep(1)
+                        time.sleep(1)                    
             else :
                 if  loop_cnt == print_loop :
-                    print_(t.name,f'make_df result not suitable..')
+                    print_(t.name,f'make_df: {ret}')
             time.sleep(1)
     except Exception as e:
         print_('',f'{e}')
