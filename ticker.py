@@ -134,6 +134,12 @@ class Ticker :
             if len(goodidx) > 0 :
                 self.simp_df = df[df.index >= goodidx[-1]]
                 # iloc index 0 : 5일선돌파봉, 1 : 돌파봉의 다음봉, 2 : 돌파봉의 다음다음봉
+                if  len(self.simp_df.index) == 3 :
+                    pd.set_option('display.max_columns', None)
+                    print_(self.name,'-------- Simple DataFrame ---------')
+                    print(self.simp_df,flush=True)
+                    print_(self.name,'-----------------------------------')
+
                 if  (len(self.simp_df.index) == 3) and \
                     (self.simp_df.iloc[0]['max_dispa50'] * 100 <= 5.0 ) and \
                     (self.simp_df.iloc[0]['open'] * 1.01 < self.simp_df.iloc[0]['ma50'] ) and \
@@ -142,9 +148,15 @@ class Ticker :
                     (self.simp_df.iloc[0]['high'] < self.simp_df.iloc[1]['high']) and \
                     (self.simp_df.iloc[0]['low']  < self.simp_df.iloc[1]['low']) and \
                     (self.simp_df.iloc[2]['ma5'] < self.simp_df.iloc[2]['low']) :
-                    # 5이평선이 우상향
-                    # 5이평돌파봉 다음봉은 고점이 돌파봉보다 높고 저점이 5이평보다 높아야함
-                    # 5이평돌파봉 다음다음봉도 조사시점현재 5이평보다 높아야함
+                    ''' INDEX 0,1,2 순서대로 돌파봉 + 안착봉 + 매수봉, 조건문 순서대로 설명되어 있음
+                            돌파봉 50이평의 50일간 최대이격도가 5% 미만 : 최근50봉은 최소한 50일선 밑에서 놀았다는 뜻
+                            돌파봉 시가가 50이평선보다 최소 1%이상 낮은 위치에 있을것 (50이평선 맞고 내려오는 경우가 있어서 상승간격을 확보)
+                            안착봉의 5이평이 우상향할것
+                            매수봉의 5이평이 우상향할것
+                            안착봉의 고점이 돌파봉 고점보다 높을것
+                            안착봉의 저점이 돌파봉 저점보다 높을것
+                            매수봉의 저가가 5이평을 회손하지 않을것
+                    '''
                     from_serial, to_serial  = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
                     now_serial = self.simp_df.iloc[0]['serial']
                     print_(self.name,f'from_serial={from_serial}, to_serial={to_serial}, now_serial={now_serial}')
@@ -161,6 +173,7 @@ class Ticker :
                     v2 = k2/d2/k3*100.0
                     print_(self.name,f'Value  Asc course:{k1:,.2f}/{d1}={v1:,.2f}% Desc course:{k2:,.2f}/{d2}={v2:,.2f}%')
                     if  d1 < 15 :
+                        ''' 하락후 반등구간이 15봉 이내, 반등구간이 길어지면 이 전략의 정확도가 떨어진다.'''
                         self.target_price =  self.simp_df.iloc[2]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
                     else :

@@ -47,11 +47,14 @@ current_time = dt.datetime.now()
 next_time = current_time + dt.timedelta(hours=2)
 
 loop_cnt = 0
-print_loop = 20
+print_loop = 10
 # 자동매매 시작
 while  True :
     loop_cnt +=1
     try : 
+        if  loop_cnt > print_loop :
+            loop_cnt = 0
+
         current_time = dt.datetime.now()
         balances = account.get_balances()
         if  (len(balances)==0) and  (current_time > next_time) :  # 주기적으로 거래량top10 종목들 재갱신
@@ -60,9 +63,6 @@ while  True :
             print_('',f"best_volume_tickers finished.. count={len(tickers)} tickers={tickers}")
             continue
 
-        if  loop_cnt >= (print_loop + 1) :   # 운영모드로 가면 충분히 크게 바꿀것..
-            loop_cnt = 0
-
         for t in  tickers :  
             # 이미 잔고가 있는 종목은 목표가에 왔는지 확인하고 즉시 매도 처리 한다.
             btc=account.get_balance(t.currency)
@@ -70,7 +70,7 @@ while  True :
                 current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["bid_price"])
                 avg_buy_price = account.get_avg_buy_price(t.currency)
                 if  loop_cnt == print_loop :
-                    print_(t.name,f'sell_balance(btc):{btc}, avg:p-cut:l-cut = {avg_buy_price:,.4f}:{avg_buy_price*1.006:,.4f}:{max(avg_buy_price * 0.985,t.losscut_price):,.4f}, curr_price= {current_price:,.4f}')
+                    print_(t.name,f'avg:p-cut:l-cut = {avg_buy_price:,.4f}:{avg_buy_price*1.006:,.4f}:{max(avg_buy_price * 0.985,t.losscut_price):,.4f}, curr_price= {current_price:,.4f}')
                 if  ( current_price > avg_buy_price * 1.006 ) or \
                     ( current_price < max(avg_buy_price * 0.985,t.losscut_price) ) :
                     account.sell_limit_order(t.name, current_price, btc )
@@ -78,10 +78,6 @@ while  True :
 
             t.make_df()
             if t.target_price > 0 :
-                pd.set_option('display.max_columns', None)
-                print_(t.name,'-------- Simple DataFrame ---------')
-                print(t.simp_df,flush=True)
-                print_(t.name,'-----------------------------------')
                 buy_enable_balance =  _MAX_SEEDS - account.get_tot_buy_price()
                 krw = account.get_balance("KRW")
                 print_(t.name,f'KRW : {krw}, usable : {buy_enable_balance}')
@@ -98,8 +94,10 @@ while  True :
                                 account.buy_limit_order(t.name, current_price, amount )
                                 break
                         time.sleep(1)
+            else :
+                if  loop_cnt == print_loop :
+                    print_(t.name,f'make_df result not suitable..')
             time.sleep(1)
-
     except Exception as e:
         print_('',f'{e}')
         time.sleep(1)
