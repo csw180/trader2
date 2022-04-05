@@ -137,6 +137,12 @@ class Ticker :
                     pd.set_option('display.max_columns', None)
                     print_(self.name,'-------- Simple DataFrame ---------')
                     print(self.simp_df,flush=True)
+                    print_(self.name, f"[idx0:max_dispa50 <= 5] {self.simp_df.iloc[0]['max_dispa50'] * 100} <= 5.0")
+                    print_(self.name, f"[idx0:open*1.01 < idx0:ma50] {self.simp_df.iloc[0]['open'] * 1.01} < {self.simp_df.iloc[0]['ma50']}")
+                    print_(self.name, f"[idx0,idx1:ma5_asc] {self.simp_df.iloc[1]['ma5_asc']},{self.simp_df.iloc[2]['ma5_asc']}")
+                    print_(self.name, f"[idx0:high < idx1:high] {self.simp_df.iloc[0]['high']}<{self.simp_df.iloc[1]['high']}")
+                    print_(self.name, f"[idx0:low < idx1:low] {self.simp_df.iloc[0]['low']}<{self.simp_df.iloc[1]['low']}")
+                    print_(self.name, f"[idx2:ma5 < idx2:low] {self.simp_df.iloc[2]['ma5']}<{self.simp_df.iloc[2]['low']}")
                     print_(self.name,'-----------------------------------')
 
                 if  (len(self.simp_df.index) == 3) and \
@@ -148,7 +154,7 @@ class Ticker :
                     (self.simp_df.iloc[0]['low']  < self.simp_df.iloc[1]['low']) and \
                     (self.simp_df.iloc[2]['ma5'] < self.simp_df.iloc[2]['low']) :
                     ''' INDEX 0,1,2 순서대로 돌파봉 + 안착봉 + 매수봉, 조건문 순서대로 설명되어 있음
-                            돌파봉 50이평의 50일간 최대이격도가 5% 미만 : 최근50봉은 최소한 50일선 밑에서 놀았다는 뜻
+                            돌파봉 50이평의 50일간 최대이격도가 5% 미만 : 최근50봉내에는 50이평을 5%이상 초과하는 고점은 존재 하지 않는다는 의미
                             돌파봉 시가가 50이평선보다 최소 1%이상 낮은 위치에 있을것 (50이평선 맞고 내려오는 경우가 있어서 상승간격을 확보)
                             안착봉의 5이평이 우상향할것
                             매수봉의 5이평이 우상향할것
@@ -176,7 +182,7 @@ class Ticker :
                         self.target_price =  self.simp_df.iloc[2]['ma5']
                         self.losscut_price = self.simp_df.iloc[0]['price']
                     else :
-                        return f'Ascending stick {d1} Maybe not < 15'
+                        return f'Ascending stick count:{d1} Maybe not < 15'
                 else :
                     return f'Already or Yet! len(simp_df)={len(self.simp_df.index)} Maybe not 3'
             else :
