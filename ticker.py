@@ -49,12 +49,11 @@ class Ticker :
             df['dispa50'] = (df['close'] - df['ma50']) / df['ma50']
             df['max_dispa50'] = df['dispa50'].rolling(window=50).max()
 
-            conditionlist = [
-                            ((df['low']+df['high'])/2 > df['ma5']) & \
+            conditionlist = [(df['close'] > df['ma5']) & \
                             ((df['low'].shift(1) + df['high'].shift(1))/2 <= df['ma5'].shift(1)) & \
                             ((df['low'].shift(2) + df['high'].shift(2))/2 <= df['ma5'].shift(2)) & \
                             ((df['low'].shift(3) + df['high'].shift(3))/2 <= df['ma5'].shift(3))   ,\
-                            ((df['low']+df['high'])/2 < df['ma5']) &\
+                            (df['close'] < df['ma5']) & \
                             ((df['low'].shift(1) + df['high'].shift(1))/2 >= df['ma5'].shift(1)) &\
                             ((df['low'].shift(2) + df['high'].shift(2))/2 >= df['ma5'].shift(2)) &\
                             ((df['low'].shift(3) + df['high'].shift(3))/2 >= df['ma5'].shift(3)) \

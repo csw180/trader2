@@ -86,10 +86,10 @@ while  True :
                     while trys > 0 :
                         trys -= 1
                         current_price = float(pyupbit.get_orderbook(ticker=t.name)["orderbook_units"][0]["ask_price"]) 
-                        print_(t.name,f'buy_{trys}: Target(*1.003)={t.target_price:,.4f}({t.target_price*1.003:,.4f}), curr_price={current_price:,.4f}')
-                        if t.target_price * 1.003 > current_price:
+                        print_(t.name,f'buy_{trys}: Target(*1.002)={t.target_price:,.4f}({t.target_price*1.002:,.4f}), curr_price={current_price:,.4f}')
+                        if t.target_price * 1.002 > current_price:
                             amount = min(buy_enable_balance,krw,_MAX_A_BUY) // current_price
-                            print_(t.name,f'buy_get_balance(KRW): {krw:,.4f} current_price {current_price:,.4} amount :{amount:,.4f}')
+                            print_(t.name,f'buy_get_balance(KRW): {krw:,.2f} current_price {current_price:,.4f} amount :{amount}')
                             if amount > 0:
                                 account.buy_limit_order(t.name, current_price, amount )
                                 break
