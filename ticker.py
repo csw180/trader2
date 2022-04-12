@@ -139,8 +139,8 @@ class Ticker :
                     print(self.simp_df,flush=True)
                     print_(self.name, f"[idx0:max_dispa50 <= 5] {self.simp_df.iloc[0]['max_dispa50'] * 100:,.4f} <= 5.0")
                     print_(self.name, f"[idx0:ma50 < ma100] {self.simp_df.iloc[0]['ma50']:,.4f} < {self.simp_df.iloc[0]['ma100']:,.4f}")
-                    print_(self.name, f"[idx0:open*1.01 < idx0:ma50] {self.simp_df.iloc[0]['open'] * 1.01:,.4f} < {self.simp_df.iloc[0]['ma50']:,.4f}")
-                    print_(self.name, f"[idx0,idx1:ma5_asc] {self.simp_df.iloc[1]['ma5_asc']:,.4f},{self.simp_df.iloc[2]['ma5_asc']:,.4f}")
+                    print_(self.name, f"[idx0:p_d1*1.005 < idx0:ma50] {self.simp_df.iloc[0]['p_d1'] * 1.005:,.4f} < {self.simp_df.iloc[0]['ma50']:,.4f}")
+                    print_(self.name, f"[idx1,idx2:ma5_asc] {self.simp_df.iloc[1]['ma5_asc']:,.4f},{self.simp_df.iloc[2]['ma5_asc']:,.4f}")
                     print_(self.name, f"[idx0:high < idx1:high] {self.simp_df.iloc[0]['high']:,.2f}<{self.simp_df.iloc[1]['high']:,.2f}")
                     print_(self.name, f"[idx0:low < idx1:low] {self.simp_df.iloc[0]['low']:,.2f}<{self.simp_df.iloc[1]['low']:,.2f}")
                     print_(self.name, f"[idx2:ma5 < idx2:low] {self.simp_df.iloc[2]['ma5']:,.4f}<{self.simp_df.iloc[2]['low']:,.2f}")
@@ -150,8 +150,8 @@ class Ticker :
 
                 if  (len(self.simp_df.index) == 3) and \
                     (self.simp_df.iloc[0]['max_dispa50'] * 100 <= 5.0 ) and \
-                    (self.simp_df.iloc[0]['open'] * 1.01 < self.simp_df.iloc[0]['ma50'] ) and \
                     (self.simp_df.iloc[0]['ma50'] < self.simp_df.iloc[0]['ma100'] ) and \
+                    (self.simp_df.iloc[0]['p_d1'] * 1.005 < self.simp_df.iloc[0]['ma50'] ) and \
                     (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[0]['high'] < self.simp_df.iloc[1]['high']) and \

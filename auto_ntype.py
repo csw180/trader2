@@ -7,8 +7,8 @@ import account
 # upbit 실계좌를 활용할경우
 # import upbit_account 로 대체
 
-_MAX_SEEDS = 1000000   # 이 전략으로 운용하는 전체 금액
-_MAX_A_BUY = 200000    # 한번의 매수 최대금액
+_MAX_SEEDS = 2000000   # 이 전략으로 운용하는 전체 금액
+_MAX_A_BUY = 1000000    # 한번의 매수 최대금액
 
 def print_(ticker,msg)  :
     if  ticker :
