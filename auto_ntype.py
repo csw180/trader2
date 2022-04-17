@@ -26,9 +26,11 @@ def best_volume_tickers() :
     # 각 종목의 거래대금을 조사한다.
     for k, v in all_tickers_prices.items() :
         if  v < 90000 :   # 단가가 9만원 미만인 것만...
-            df = pyupbit.get_ohlcv(k, count=3, interval='minute60')  #60분봉 3개의 거래대금
+            df = pyupbit.get_ohlcv(k, count=10, interval='minute60')  #60분봉 3개의 거래대금
+            df['ma5'] = df['close'].rolling(window=5).mean()
             time.sleep(0.5)
-            if len(df.index) > 0 :
+            if (len(df.index) > 0) and (df.iloc[-1]['close'] < df.iloc[-1]['ma5']) :
+                print_(k,f"idx-1:close < idx-1:ma5: {df.iloc[-1]['close']} < {df.iloc[-1]['ma5']} ")
                 all_tickers_value[k] = df['value'].sum()
 
     # 거래대금 top 10 에 해당하는 종목만 걸러낸다
@@ -58,7 +60,7 @@ while  True :
         current_time = dt.datetime.now()
         balances = account.get_balances()
         if  (len(balances)==0) and  (current_time > next_time) :  # 주기적으로 거래량top10 종목들 재갱신
-            next_time = current_time + dt.timedelta(hours=2)
+            next_time = current_time + dt.timedelta(hours=1)
             tickers = best_volume_tickers()
             print_('',f"best_volume_tickers finished.. count={len(tickers)} tickers={tickers}")
             continue
