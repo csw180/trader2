@@ -41,122 +41,124 @@ class Ticker :
                 return 'Need 150 5minutes-stick'
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
-            df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
-            df['vma5'] = df['value'].rolling(window=5).mean()
+            df['ma10'] = df['close'].rolling(window=10).mean()
+            df['ma60'] = df['close'].rolling(window=60).mean()
+            df['ma120'] = df['close'].rolling(window=120).mean()
+            df['dispa60'] = (df['close'] - df['ma60']) / df['ma60']
+            df['max_dispa60'] = df['dispa60'].rolling(window=60).max()
+            df['baseline'] = (df['high'].rolling(window=26).max() + df['low'].rolling(window=26).min()) / 2
 
-            df['ma50'] = df['close'].rolling(window=50).mean()
-            df['ma100'] = df['close'].rolling(window=100).mean()
-            df['dispa50'] = (df['close'] - df['ma50']) / df['ma50']
-            df['max_dispa50'] = df['dispa50'].rolling(window=50).max()
-
-            conditionlist = [(df['close'] > df['ma5']) & \
-                            ((df['low'].shift(1) + df['high'].shift(1))/2 <= df['ma5'].shift(1)) & \
-                            ((df['low'].shift(2) + df['high'].shift(2))/2 <= df['ma5'].shift(2)) & \
-                            ((df['low'].shift(3) + df['high'].shift(3))/2 <= df['ma5'].shift(3))   ,\
-                            (df['close'] < df['ma5']) & \
-                            ((df['low'].shift(1) + df['high'].shift(1))/2 >= df['ma5'].shift(1)) &\
-                            ((df['low'].shift(2) + df['high'].shift(2))/2 >= df['ma5'].shift(2)) &\
-                            ((df['low'].shift(3) + df['high'].shift(3))/2 >= df['ma5'].shift(3)) \
+            conditionlist = [(df['ma10'] < df['ma5']) & \
+                            (df['ma10'].shift(1) >= df['ma5'].shift(1)) & \
+                            (df['ma10'].shift(2) >= df['ma5'].shift(2)) & \
+                            (df['ma10'].shift(3) >= df['ma5'].shift(3))   ,\
+                            (df['ma10'] > df['ma5']) & \
+                            (df['ma10'].shift(1) <= df['ma5'].shift(1)) &\
+                            (df['ma10'].shift(2) <= df['ma5'].shift(2)) &\
+                            (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
                             ]        
-            choicelist1 = ['up', 'down']
-            choicelist2 = [df['low'].rolling(4).min(),df['high'].rolling(4).max()]
-
+            choicelist1 = ['golden', 'dead']
             df['way'] = np.select(conditionlist, choicelist1, default='')
-            df['price'] = np.select(conditionlist, choicelist2, default='')
-            df['price'] = df['price'].astype(float, errors='ignore')
-            df['vma5'] = df['vma5'].astype(float, errors='ignore')
-            df['dispa50'] = df['dispa50'].astype(float, errors='ignore')
-            df['max_dispa50'] = df['max_dispa50'].astype(float, errors='ignore')
+            df['dispa60'] = df['dispa60'].astype(float, errors='ignore')
+            df['max_dispa60'] = df['max_dispa60'].astype(float, errors='ignore')
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
-            refine_df = None
-            df_copy = df.copy()
-            df_copy = df_copy[df_copy['way'] > '']
+            df_copy = df[df['way'] > '']
+
+            stack_inflection = []  # 변곡점  price, way
+            stack_inflection_index = []  # 변곡점 index
 
             if len(df_copy.index) > 0 :
-                df_copy = df_copy[::-1]
-
-                refine_df = None
-                prev_way = None
-                trickery_list =[]
                 for row in df_copy.itertuples():
-                    if (prev_way is None ) | (prev_way == row.way) :
-                        trickery_list.append(row)
-                        prev_way = row.way
-                    elif prev_way != row.way :
-                        if refine_df is None :
-                            refine_df = self.process_trickery(trickery_list).copy()
-                        else :
-                            refine_df = pd.concat([refine_df,self.process_trickery(trickery_list)])
-                        trickery_list.clear()
-                        trickery_list.append(row)
-                        prev_way = row.way
-
-                if  len(trickery_list) > 0 :
-                    if refine_df is None :
-                        refine_df = self.process_trickery(trickery_list).copy()
+                    if  len(stack_inflection_index) == 0 :
+                        temp = {}
+                        temp['pway'] = row.way   
+                        temp['price'] = row.close
+                        stack_inflection.append(temp)
+                        stack_inflection_index.append(row.Index)
                     else :
-                        refine_df = pd.concat([refine_df,self.process_trickery(trickery_list)])
-                if  len(refine_df.index) > 3 :    
-                    refine_df['p_d1'] = refine_df['price'].shift(-1)
-                    refine_df['p_d1_ser'] = refine_df['serial'].shift(-1)
-                    refine_df['p_d2'] = refine_df['price'].shift(-2)
-                    refine_df['p_d2_ser'] = refine_df['serial'].shift(-2)
-                    refine_df['p_d3'] = refine_df['price'].shift(-3)               
+                        top = stack_inflection.pop()
+                        top_index = stack_inflection_index.pop()
+                        if row.way == 'golden' :
+                            price = df[(df.index > top_index) & (df.index <= row.Index) ]['low'].min()
+                            price_date =  df[(df.index > top_index) & (df.index <= row.Index) & (df['low']==price) ].index.min()
+                            if  top['pway'] == row.way :
+                                if  top['price'] <= price :
+                                    price = top['price']
+                                    price_date = min(price_date,top_index)
+                            else :
+                                stack_inflection.append(top)                             
+                                stack_inflection_index.append(top_index)    
+                        else :
+                            price = df[(df.index > top_index) & (df.index <= row.Index) ]['high'].max()
+                            price_date =  df[(df.index > top_index) & (df.index <= row.Index) & (df['high']==price) ].index.min()
+                            if  top['pway'] == row.way :
+                                if  top['price'] >= price :
+                                    price = top['price']
+                                    price_date = min(price_date,top_index)
+                            else :
+                                stack_inflection.append(top)                             
+                                stack_inflection_index.append(top_index)
 
-                    refine_df['p_d1'] = refine_df['p_d1'].astype(float, errors ='ignore')
-                    refine_df['p_d2'] = refine_df['p_d2'].astype(float, errors ='ignore')
-                    refine_df['p_d3'] = refine_df['p_d3'].astype(float, errors ='ignore')
+                        temp = {}
+                        temp['pway'] = row.way
+                        temp['price'] = price     
+                        stack_inflection.append(temp)
+                        stack_inflection_index.append(price_date)
 
-                    refine_df['p_d1_ser'] = refine_df['p_d1_ser'].astype(float, errors ='ignore')
-                    refine_df['p_d2_ser'] = refine_df['p_d2_ser'].astype(float, errors ='ignore')
-                    refine_df['price'] = refine_df['price'].astype(float, errors ='ignore')
-                    refine_df['attack'] = refine_df.apply( 
-                        lambda row : 'good' if (row['way'] == 'up') and \
-                                               (row['price'] > (row['p_d2']*1.005)) and \
-                                               (row['p_d1'] * 1.005 < row['p_d3']) else '' ,axis=1)
-                else :
-                    return f'Not enough Turning-Point {len(refine_df.index)}. May not > 3'
+                # print(stack_inflection)
+                # print(f'stack_inflection lne= {len(stack_inflection)}')
+                # print(stack_inflection_index)
+                # print(f'stack_inflection_index len={len(stack_inflection_index)}')
             else :
                 return 'Nothing Turning-Point'
 
-            # 기초 df 와 refine_df 를 join 한다.
-            df = df.drop(['way','price','serial'],axis = 1)
-            self.df = df.join(refine_df)
+            df_refined = pd.DataFrame(stack_inflection, index=stack_inflection_index)
+            if  len(df_refined.index) > 3 :    
+                df_refined['p_d1'] = df_refined['price'].shift(1)
+                df_refined['p_d2'] = df_refined['price'].shift(2)
+                df_refined['p_d3'] = df_refined['price'].shift(3)               
+
+                df_refined['p_d1'] = df_refined['p_d1'].astype(float, errors ='ignore')
+                df_refined['p_d2'] = df_refined['p_d2'].astype(float, errors ='ignore')
+                df_refined['p_d3'] = df_refined['p_d3'].astype(float, errors ='ignore')
+
+                df_refined['price'] = df_refined['price'].astype(float, errors ='ignore')
+                df_refined['attack'] = df_refined.apply( 
+                    lambda row : 'good' if (row['pway'] == 'golden') and \
+                                            (row['price'] > (row['p_d2']*1.005)) and \
+                                            (row['p_d1'] * 1.005 < row['p_d3']) else '' ,axis=1)
+                print(df_refined.tail(20))
+            else :
+                return f'Not enough Turning-Point {len(df_refined.index)}. May not > 3'
+
+            # df = df.drop(['way'],axis = 1)
+            df = df.join(df_refined)
+            self.df = df.copy()
+            # print(df_refined)
+            # print(df.tail(40))
 
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
             todaystr = dt.datetime.now() - dt.timedelta(minutes=30)  #30분간만 대상
-            df = self.df.copy()
             df = df[df.index >= todaystr]
             goodidx = df.index[df['attack']=='good'].tolist()
 
             if len(goodidx) > 0 :
-                self.simp_df = df[df.index >= goodidx[-1]]
-                # iloc index 0 : 5일선돌파봉, 1 : 돌파봉의 다음봉, 2 : 돌파봉의 다음다음봉
-                if  len(self.simp_df.index) == 3 :
-                    pd.set_option('display.max_columns', None)
-                    print_(self.name,'-------- Simple DataFrame ---------')
-                    print(self.simp_df,flush=True)
-                    print_(self.name, f"[idx0:max_dispa50 <= 5] {self.simp_df.iloc[0]['max_dispa50'] * 100:,.4f} <= 5.0")
-                    print_(self.name, f"[idx0:ma50 < ma100] {self.simp_df.iloc[0]['ma50']:,.4f} < {self.simp_df.iloc[0]['ma100']:,.4f}")
-                    print_(self.name, f"[idx0:p_d1*1.005 < idx0:ma50] {self.simp_df.iloc[0]['p_d1'] * 1.005:,.4f} < {self.simp_df.iloc[0]['ma50']:,.4f}")
-                    print_(self.name, f"[idx1,idx2:ma5_asc] {self.simp_df.iloc[1]['ma5_asc']:,.4f},{self.simp_df.iloc[2]['ma5_asc']:,.4f}")
-                    print_(self.name, f"[idx0:high < idx1:high] {self.simp_df.iloc[0]['high']:,.2f}<{self.simp_df.iloc[1]['high']:,.2f}")
-                    print_(self.name, f"[idx0:low < idx1:low] {self.simp_df.iloc[0]['low']:,.2f}<{self.simp_df.iloc[1]['low']:,.2f}")
-                    print_(self.name, f"[idx2:ma5 < idx2:low] {self.simp_df.iloc[2]['ma5']:,.4f}<{self.simp_df.iloc[2]['low']:,.2f}")
-                    print_(self.name,'-----------------------------------')
-                else :
-                    return f'Already or Yet! len(simp_df)={len(self.simp_df.index)} Maybe not 3'
+                self.simp_df = self.df[self.df.index >= goodidx[-1]][::-1]
+                pd.set_option('display.max_columns', None)
+                print_(self.name,'-------- Simple DataFrame ---------')
+                print(self.simp_df,flush=True)
+                print_(self.name, f"[idx0:ma60 < ma120] {self.simp_df.iloc[0]['ma60']:,.4f} < {self.simp_df.iloc[0]['ma120']:,.4f}")
+                print_(self.name, f"[idx0:p_d1*1.005 < idx0:ma60] {self.simp_df.iloc[0]['p_d1'] * 1.005:,.4f} < {self.simp_df.iloc[0]['ma60']:,.4f}")
+                print_(self.name, f"[idx0:close >= idx0:baseline] {self.simp_df.iloc[0]['close']:,.4f}<{self.simp_df.iloc[0]['baseline']:,.2f}")
+                print_(self.name, f"[idx1:close >= idx1:baseline] {self.simp_df.iloc[1]['close']:,.4f}<{self.simp_df.iloc[1]['baseline']:,.2f}")
+                print_(self.name, f"[idx0:ma5 < idx0:baseline] {self.simp_df.iloc[0]['ma5']:,.2f}<{self.simp_df.iloc[0]['baseline']:,.2f}")
+                print_(self.name,'-----------------------------------')
 
-                if  (len(self.simp_df.index) == 3) and \
-                    (self.simp_df.iloc[0]['max_dispa50'] * 100 <= 5.0 ) and \
-                    (self.simp_df.iloc[0]['ma50'] < self.simp_df.iloc[0]['ma100'] ) and \
-                    (self.simp_df.iloc[0]['p_d1'] * 1.005 < self.simp_df.iloc[0]['ma50'] ) and \
-                    (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[0]['high'] < self.simp_df.iloc[1]['high']) and \
-                    (self.simp_df.iloc[0]['low']  < self.simp_df.iloc[1]['low']) and \
-                    (self.simp_df.iloc[2]['ma5'] < self.simp_df.iloc[2]['low']) :
+                if  (self.simp_df.iloc[0]['ma60'] < self.simp_df.iloc[0]['ma120'] ) and \
+                    (self.simp_df.iloc[0]['p_d1'] * 1.005 < self.simp_df.iloc[0]['ma60'] ) and \
+                    (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['baseline']) and \
+                    (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['baseline'])  :
                     ''' INDEX 0,1,2 순서대로 돌파봉 + 안착봉 + 매수봉, 조건문 순서대로 설명되어 있음
                             돌파봉 50이평의 50일간 최대이격도가 5% 미만 : 최근50봉내에는 50이평을 5%이상 초과하는 고점은 존재 하지 않는다는 의미
                             돌파봉 시가가 50이평선보다 최소 1%이상 낮은 위치에 있을것 (50이평선 맞고 내려오는 경우가 있어서 상승간격을 확보)
@@ -166,66 +168,24 @@ class Ticker :
                             안착봉의 저점이 돌파봉 저점보다 높을것
                             매수봉의 저가가 5이평을 회손하지 않을것
                     '''
-                    from_serial, to_serial  = self.simp_df.iloc[0]['p_d2_ser'], self.simp_df.iloc[0]['p_d1_ser']
-                    now_serial = self.simp_df.iloc[0]['serial']
-                    print_(self.name,f'from_serial={from_serial}, to_serial={to_serial}, now_serial={now_serial}')
-                    val_fromIdx, val_toIdx, val_nowIdx = self.df[self.df['serial']==from_serial].index.tolist(), \
-                                    self.df[self.df['serial']==to_serial].index.tolist(), \
-                                    self.df[self.df['serial']==now_serial].index.tolist()
-                    print_(self.name,f'val_fromIdx={val_fromIdx[0]}, val_toIdx={val_toIdx[0]}, val_nowIdx={val_nowIdx[0]}')
-
-                    k1 = self.df[(val_fromIdx[0] <= self.df.index) & (self.df.index < val_toIdx[0])]['value'].sum()
-                    k2 = self.df[(val_toIdx[0] <= self.df.index) & (self.df.index <= val_nowIdx[0])]['value'].sum()
-                    k3 = self.simp_df.iloc[0]['vma5']
-                    d1,d2 = to_serial - from_serial, now_serial - to_serial + 1
-                    v1 = k1/d1/k3*100.0
-                    v2 = k2/d2/k3*100.0
-                    print_(self.name,f'Value  Asc course:{k1:,.2f}/{d1}={v1:,.2f}% Desc course:{k2:,.2f}/{d2}={v2:,.2f}%')
-                    if  d1 < 15 :
-                        ''' 하락후 반등구간이 15봉 이내, 반등구간이 길어지면 이 전략의 정확도가 떨어진다.'''
-                        self.target_price =  self.simp_df.iloc[2]['ma5']
-                        self.losscut_price = self.simp_df.iloc[0]['price']
-                    else :
-                        return f'Ascending stick count:{d1} Maybe not < 15'
-                else :
-                    return f'Detail condition not suitable'
+                    self.target_price =  self.simp_df.iloc[0]['baseline']
+                    self.losscut_price = self.target_price * 0.985
             else :
                 return 'Not found good Attack-Point'
+
         except TypeError as te :
             print_(self.name,'make_df: te={te}')
             self.df = None
             self.simp_df = None
-            return 'TypeError'
+            return 'TypeError'            
         return 'success'
 
-    def  process_trickery(self,trickery_list) :
-        index_list = []
-        data_dict = {}    # way, price 두개 요소
-        data_dict['way'] = None
-        data_dict['price'] = None
-        data_dict['serial'] = None
-        for row in trickery_list:
-            if len(index_list) == 0 :
-                index_list.append(row.Index)
-                data_dict['way'] = row.way
-                data_dict['price'] = row.price
-                data_dict['serial'] = row.serial
-                continue
-            elif  ( (row.way == 'up') and (row.low < float(data_dict['price']) )) or \
-                    ( (row.way == 'down') and (row.high > float(data_dict['price']) )) :
-                index_list.clear()
-                index_list.append(row.Index)
-                data_dict['way'] = row.way
-                data_dict['price'] = row.price
-                data_dict['serial'] = row.serial
-        return pd.DataFrame(data_dict, index=index_list)
-
 if __name__ == "__main__":
-    t  = Ticker('KRW-ZIL')
+    t  = Ticker('KRW-KNC')
     pd.set_option('display.max_columns', None)
     t.make_df()
-    print(t.df.tail(40))
-    t.df.to_excel('a.xlsx')
+    # print(t.df.tail(40))
+    # t.df.to_excel('a.xlsx')
 
     # val_fromIdx, val_toIdx = t.df[t.df['serial']==92].index.tolist(), \
     #     t.df[t.df['serial']==96].index.tolist()
@@ -251,10 +211,11 @@ if __name__ == "__main__":
     # k1 = t.df[(80 <= t.df['serial']) & (t.df['serial'] < 92)]['value'].sum()
     # print(k1)
 
-    fillered_df = t.df[t.df['way'] > '']
+    fillered_df = t.df[t.df['pway'] > '']
     plt.figure(figsize=(9,5))
     plt.plot(t.df.index, t.df['ma5'], label="MA5")
-    plt.plot(t.df.index, t.df['ma50'], label="MA50")
+    plt.plot(t.df.index, t.df['ma10'], label="MA10")
+    plt.plot(t.df.index, t.df['ma60'], label="MA60")
     plt.plot(fillered_df.index, fillered_df['price'], label="Price")
     plt.plot(t.df.index, t.df['close'], label="close")
     plt.legend(loc='best')
