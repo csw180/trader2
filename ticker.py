@@ -126,20 +126,17 @@ class Ticker :
                 df_refined['price'] = df_refined['price'].astype(float, errors ='ignore')
                 df_refined['attack'] = df_refined.apply( 
                     lambda row : 'good' if (row['pway'] == 'golden') and \
-                                            (row['price'] > (row['p_d2']*1.005)) and \
-                                            (row['p_d1'] * 1.005 < row['p_d3']) else '' ,axis=1)
-                print(df_refined.tail(20))
+                                            (row['price'] > row['p_d2']) and \
+                                            (row['p_d1'] * 1.01 < row['p_d3']) else '' ,axis=1)
             else :
                 return f'Not enough Turning-Point {len(df_refined.index)}. May not > 3'
 
-            # df = df.drop(['way'],axis = 1)
+            print(df_refined)
             df = df.join(df_refined)
             self.df = df.copy()
-            # print(df_refined)
-            # print(df.tail(40))
 
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
-            todaystr = dt.datetime.now() - dt.timedelta(minutes=30)  #30분간만 대상
+            todaystr = dt.datetime.now() - dt.timedelta(minutes=90)  #90분간만 대상
             df = df[df.index >= todaystr]
             goodidx = df.index[df['attack']=='good'].tolist()
 
@@ -181,35 +178,11 @@ class Ticker :
         return 'success'
 
 if __name__ == "__main__":
-    t  = Ticker('KRW-KNC')
+    t  = Ticker('KRW-XRP')
     pd.set_option('display.max_columns', None)
     t.make_df()
-    # print(t.df.tail(40))
+    print(t.df.tail(40))
     # t.df.to_excel('a.xlsx')
-
-    # val_fromIdx, val_toIdx = t.df[t.df['serial']==92].index.tolist(), \
-    #     t.df[t.df['serial']==96].index.tolist()
-    # # print(val_fromIdx[0].strftime('%m/%d/%Y, %r'),val_toIdx[0].strftime('%m/%d/%Y, %r'))
-    # print(len(val_fromIdx),len(val_toIdx))
-    # val_nowIdx = t.simp_df.iloc[0].index
-    # k1 = t.df[(val_fromIdx <= t.df.index) & (t.df.index < val_toIdx)]['value'].sum()
-    # k1 = t.df[val_fromIdx : val_toIdx]['value'].sum()
-
-    # print(k1)
-
-    # k2 = self.df[(val_toIdx <= self.df.index) & (self.df.index <= val_nowIdx)]['value'].sum()
-    # k3 = self.simp_df.iloc[0]['vma5']
-    # d1,d2 = self.simp_df.iloc[0]['p_d1_ser'] - self.simp_df.iloc[0]['p_d2_ser'],  \
-    #         self.simp_df.iloc[0]['serial'] - self.simp_df.iloc[0]['p_d1_ser'] + 1
-    # v1 = k1/d1/k3*100.0
-    # v2 = k2/d2/k3*100.0
-
-    # t.df.to_excel('a.xlsx')
-    # x_df = t.df[t.df['way'] > '']
-    # # 표 그리기
-    # val_fromIdx, val_toIdx = t.simp_df.iloc[0]['p_d2_ser'], t.simp_df.iloc[0]['p_d1_ser']
-    # k1 = t.df[(80 <= t.df['serial']) & (t.df['serial'] < 92)]['value'].sum()
-    # print(k1)
 
     fillered_df = t.df[t.df['pway'] > '']
     plt.figure(figsize=(9,5))

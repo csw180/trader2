@@ -60,7 +60,7 @@ while  True :
         current_time = dt.datetime.now()
         balances = account.get_balances()
         if  (len(balances)==0) and  (current_time > next_time) :  # 주기적으로 거래량top10 종목들 재갱신
-            next_time = current_time + dt.timedelta(hours=1)
+            next_time = current_time + dt.timedelta(hours=2)
             tickers = best_volume_tickers()
             print_('',f"best_volume_tickers finished.. count={len(tickers)} tickers={tickers}")
             continue
