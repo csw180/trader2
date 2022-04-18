@@ -1,3 +1,4 @@
+from cmath import nan
 import time
 import pyupbit
 import pandas as pd
@@ -58,7 +59,7 @@ class Ticker :
                             (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
                             ]        
             choicelist1 = ['golden', 'dead']
-            df['way'] = np.select(conditionlist, choicelist1, default=np.NaN)
+            df['way'] = np.select(conditionlist, choicelist1, default=None)
             df['dispa60'] = df['dispa60'].astype(float, errors='ignore')
             df['max_dispa60'] = df['max_dispa60'].astype(float, errors='ignore')
 
@@ -67,7 +68,6 @@ class Ticker :
 
             stack_inflection = []  # 변곡점  price, way
             stack_inflection_index = []  # 변곡점 index
-
             if len(df_copy.index) > 0 :
                 for row in df_copy.itertuples():
                     if  len(stack_inflection_index) == 0 :
@@ -127,14 +127,13 @@ class Ticker :
                 df_refined['attack'] = df_refined.apply( 
                     lambda row : 'good' if (row['pway'] == 'golden') and \
                                             (row['price'] > row['p_d2']) and \
-                                            (row['p_d1'] * 1.01 < row['p_d3']) else np.NaN ,axis=1)
+                                            (row['p_d1'] * 1.01 < row['p_d3']) else None ,axis=1)
             else :
                 return f'Not enough Turning-Point {len(df_refined.index)}. May not > 3'
 
             # print(df_refined)
             df = df.join(df_refined)
             self.df = df.copy()
-
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
             todaystr = dt.datetime.now() - dt.timedelta(minutes=90)  #90분간만 대상
             df = df[df.index >= todaystr]
@@ -146,13 +145,13 @@ class Ticker :
                 print_(self.name,'-------- Simple DataFrame ---------')
                 print(self.simp_df[ (self.simp_df['pway'].notnull()) | (self.simp_df['way'].notnull()) | (self.simp_df['attack'].notnull())],flush=True)
                 print_(self.name, f"[idx0:ma60 < ma120] {self.simp_df.iloc[0]['ma60']:,.4f} < {self.simp_df.iloc[0]['ma120']:,.4f}")
-                print_(self.name, f"[idx0:baseline*1.01 < idx0:ma60] {self.simp_df.iloc[0]['baseline'] * 1.01:,.4f} < {self.simp_df.iloc[0]['ma60']:,.4f}")
+                print_(self.name, f"[idx0:baseline < idx0:ma60] {self.simp_df.iloc[0]['baseline']:,.4f} < {self.simp_df.iloc[0]['ma60']:,.4f}")
                 print_(self.name, f"[idx0:close >= idx0:baseline] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['baseline']:,.2f}")
                 print_(self.name, f"[idx1:close >= idx1:baseline] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['baseline']:,.2f}")
                 print_(self.name,'-----------------------------------')
 
                 if  (self.simp_df.iloc[0]['ma60'] < self.simp_df.iloc[0]['ma120'] ) and \
-                    (self.simp_df.iloc[0]['baseline'] * 1.01 < self.simp_df.iloc[0]['ma60'] ) and \
+                    (self.simp_df.iloc[0]['baseline'] < self.simp_df.iloc[0]['ma60'] ) and \
                     (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['baseline']) and \
                     (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['baseline'])  :
                     self.target_price =  self.simp_df.iloc[0]['baseline']
@@ -173,7 +172,7 @@ if __name__ == "__main__":
     t  = Ticker('KRW-XRP')
     pd.set_option('display.max_columns', None)
     t.make_df()
-    print(t.df.tail(40))
+    # print(t.df.tail(40))
     # t.df.to_excel('a.xlsx')
 
     fillered_df = t.df[t.df['pway'] > '']
