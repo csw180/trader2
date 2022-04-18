@@ -42,6 +42,7 @@ class Ticker :
                 return 'Need 150 5minutes-stick'
             df['serial'] = pd.Series(np.arange(1,len(df.index)+1,1),index=df.index)
             df['ma5'] = df['close'].rolling(window=5).mean()
+            df['ma5_asc'] = df['ma5'] - df['ma5'].shift(1)
             df['ma10'] = df['close'].rolling(window=10).mean()
             df['ma60'] = df['close'].rolling(window=60).mean()
             df['ma120'] = df['close'].rolling(window=120).mean()
@@ -49,15 +50,22 @@ class Ticker :
             df['max_dispa60'] = df['dispa60'].rolling(window=60).max()
             df['baseline'] = (df['high'].rolling(window=26).max() + df['low'].rolling(window=26).min()) / 2
 
+            # conditionlist = [(df['ma10'] < df['ma5']) & \
+            #                 (df['ma10'].shift(1) >= df['ma5'].shift(1)) & \
+            #                 (df['ma10'].shift(2) >= df['ma5'].shift(2)) & \
+            #                 (df['ma10'].shift(3) >= df['ma5'].shift(3))   ,\
+            #                 (df['ma10'] > df['ma5']) & \
+            #                 (df['ma10'].shift(1) <= df['ma5'].shift(1)) &\
+            #                 (df['ma10'].shift(2) <= df['ma5'].shift(2)) &\
+            #                 (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
+            #                 ]        
             conditionlist = [(df['ma10'] < df['ma5']) & \
                             (df['ma10'].shift(1) >= df['ma5'].shift(1)) & \
-                            (df['ma10'].shift(2) >= df['ma5'].shift(2)) & \
-                            (df['ma10'].shift(3) >= df['ma5'].shift(3))   ,\
+                            (df['ma10'].shift(2) >= df['ma5'].shift(2)) ,\
                             (df['ma10'] > df['ma5']) & \
                             (df['ma10'].shift(1) <= df['ma5'].shift(1)) &\
-                            (df['ma10'].shift(2) <= df['ma5'].shift(2)) &\
-                            (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
-                            ]        
+                            (df['ma10'].shift(2) <= df['ma5'].shift(2)) \
+                            ]      
             choicelist1 = ['golden', 'dead']
             df['way'] = np.select(conditionlist, choicelist1, default=None)
             df['dispa60'] = df['dispa60'].astype(float, errors='ignore')
@@ -126,16 +134,21 @@ class Ticker :
                 df_refined['price'] = df_refined['price'].astype(float, errors ='ignore')
                 df_refined['attack'] = df_refined.apply( 
                     lambda row : 'good' if (row['pway'] == 'golden') and \
-                                            (row['price'] > row['p_d2']) and \
-                                            (row['p_d1'] * 1.01 < row['p_d3']) else None ,axis=1)
+                                            (row['price'] > row['p_d2'] * 1.005 ) and \
+                                            (row['p_d1'] * 1.02 < row['p_d3']) else None ,axis=1)
             else :
                 return f'Not enough Turning-Point {len(df_refined.index)}. May not > 3'
 
             # print(df_refined)
             df = df.join(df_refined)
+            df['attack'] = df.apply(
+                lambda row : 'good' if  (row['attack']=='good')  and  \
+                                        (row['ma5_asc'] > 0)  and  \
+                                        (row['price'] * 1.008 < row['ma60']) and \
+                                        (row['ma60']  < row['ma120']) else None, axis=1)
             self.df = df.copy()
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
-            todaystr = dt.datetime.now() - dt.timedelta(minutes=90)  #90분간만 대상
+            todaystr = dt.datetime.now() - dt.timedelta(minutes=60)  #60분간만 대상
             df = df[df.index >= todaystr]
             goodidx = df.index[df['attack']=='good'].tolist()
 
@@ -145,16 +158,13 @@ class Ticker :
                 print_(self.name,'-------- Simple DataFrame ---------')
                 print(self.simp_df[ (self.simp_df['pway'].notnull()) | (self.simp_df['way'].notnull()) | (self.simp_df['attack'].notnull())],flush=True)
                 print_(self.name, f"[idx0:ma60 < ma120] {self.simp_df.iloc[0]['ma60']:,.4f} < {self.simp_df.iloc[0]['ma120']:,.4f}")
-                print_(self.name, f"[idx0:baseline < idx0:ma60] {self.simp_df.iloc[0]['baseline']:,.4f} < {self.simp_df.iloc[0]['ma60']:,.4f}")
-                print_(self.name, f"[idx0:close >= idx0:baseline] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['baseline']:,.2f}")
-                print_(self.name, f"[idx1:close >= idx1:baseline] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['baseline']:,.2f}")
+                print_(self.name, f"[idx0:close >= idx0:ma5] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['ma5']:,.2f}")
+                print_(self.name, f"[idx1:close >= idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['ma5']:,.2f}")
                 print_(self.name,'-----------------------------------')
 
-                if  (self.simp_df.iloc[0]['ma60'] < self.simp_df.iloc[0]['ma120'] ) and \
-                    (self.simp_df.iloc[0]['baseline'] < self.simp_df.iloc[0]['ma60'] ) and \
-                    (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['baseline']) and \
-                    (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['baseline'])  :
-                    self.target_price =  self.simp_df.iloc[0]['baseline']
+                if  (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['ma5']) and \
+                    (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['ma5'])  :
+                    self.target_price  = self.simp_df.iloc[0]['ma5']
                     self.losscut_price = self.target_price * 0.985
                 else :
                     return 'Detail Condition not suitable'
@@ -169,7 +179,7 @@ class Ticker :
         return 'success'
 
 if __name__ == "__main__":
-    t  = Ticker('KRW-XRP')
+    t  = Ticker('KRW-MTL')
     pd.set_option('display.max_columns', None)
     t.make_df()
     # print(t.df.tail(40))
