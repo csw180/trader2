@@ -58,12 +58,12 @@ class Ticker :
                             (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
                             ]        
             choicelist1 = ['golden', 'dead']
-            df['way'] = np.select(conditionlist, choicelist1, default='')
+            df['way'] = np.select(conditionlist, choicelist1, default=np.NaN)
             df['dispa60'] = df['dispa60'].astype(float, errors='ignore')
             df['max_dispa60'] = df['max_dispa60'].astype(float, errors='ignore')
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
-            df_copy = df[df['way'] > '']
+            df_copy = df[df['way'].notnull()]
 
             stack_inflection = []  # 변곡점  price, way
             stack_inflection_index = []  # 변곡점 index
@@ -127,11 +127,11 @@ class Ticker :
                 df_refined['attack'] = df_refined.apply( 
                     lambda row : 'good' if (row['pway'] == 'golden') and \
                                             (row['price'] > row['p_d2']) and \
-                                            (row['p_d1'] * 1.01 < row['p_d3']) else '' ,axis=1)
+                                            (row['p_d1'] * 1.01 < row['p_d3']) else np.NaN ,axis=1)
             else :
                 return f'Not enough Turning-Point {len(df_refined.index)}. May not > 3'
 
-            print(df_refined)
+            # print(df_refined)
             df = df.join(df_refined)
             self.df = df.copy()
 
@@ -144,29 +144,21 @@ class Ticker :
                 self.simp_df = self.df[self.df.index >= goodidx[-1]][::-1]
                 pd.set_option('display.max_columns', None)
                 print_(self.name,'-------- Simple DataFrame ---------')
-                print(self.simp_df,flush=True)
+                print(self.simp_df[ (self.simp_df['pway'].notnull()) | (self.simp_df['way'].notnull()) | (self.simp_df['attack'].notnull())],flush=True)
                 print_(self.name, f"[idx0:ma60 < ma120] {self.simp_df.iloc[0]['ma60']:,.4f} < {self.simp_df.iloc[0]['ma120']:,.4f}")
-                print_(self.name, f"[idx0:p_d1*1.005 < idx0:ma60] {self.simp_df.iloc[0]['p_d1'] * 1.005:,.4f} < {self.simp_df.iloc[0]['ma60']:,.4f}")
-                print_(self.name, f"[idx0:close >= idx0:baseline] {self.simp_df.iloc[0]['close']:,.4f}<{self.simp_df.iloc[0]['baseline']:,.2f}")
-                print_(self.name, f"[idx1:close >= idx1:baseline] {self.simp_df.iloc[1]['close']:,.4f}<{self.simp_df.iloc[1]['baseline']:,.2f}")
-                print_(self.name, f"[idx0:ma5 < idx0:baseline] {self.simp_df.iloc[0]['ma5']:,.2f}<{self.simp_df.iloc[0]['baseline']:,.2f}")
+                print_(self.name, f"[idx0:baseline*1.01 < idx0:ma60] {self.simp_df.iloc[0]['baseline'] * 1.01:,.4f} < {self.simp_df.iloc[0]['ma60']:,.4f}")
+                print_(self.name, f"[idx0:close >= idx0:baseline] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['baseline']:,.2f}")
+                print_(self.name, f"[idx1:close >= idx1:baseline] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['baseline']:,.2f}")
                 print_(self.name,'-----------------------------------')
 
                 if  (self.simp_df.iloc[0]['ma60'] < self.simp_df.iloc[0]['ma120'] ) and \
-                    (self.simp_df.iloc[0]['p_d1'] * 1.005 < self.simp_df.iloc[0]['ma60'] ) and \
+                    (self.simp_df.iloc[0]['baseline'] * 1.01 < self.simp_df.iloc[0]['ma60'] ) and \
                     (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['baseline']) and \
                     (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['baseline'])  :
-                    ''' INDEX 0,1,2 순서대로 돌파봉 + 안착봉 + 매수봉, 조건문 순서대로 설명되어 있음
-                            돌파봉 50이평의 50일간 최대이격도가 5% 미만 : 최근50봉내에는 50이평을 5%이상 초과하는 고점은 존재 하지 않는다는 의미
-                            돌파봉 시가가 50이평선보다 최소 1%이상 낮은 위치에 있을것 (50이평선 맞고 내려오는 경우가 있어서 상승간격을 확보)
-                            안착봉의 5이평이 우상향할것
-                            매수봉의 5이평이 우상향할것
-                            안착봉의 고점이 돌파봉 고점보다 높을것
-                            안착봉의 저점이 돌파봉 저점보다 높을것
-                            매수봉의 저가가 5이평을 회손하지 않을것
-                    '''
                     self.target_price =  self.simp_df.iloc[0]['baseline']
                     self.losscut_price = self.target_price * 0.985
+                else :
+                    return 'Detail Condition not suitable'
             else :
                 return 'Not found good Attack-Point'
 
@@ -190,7 +182,7 @@ if __name__ == "__main__":
     plt.plot(t.df.index, t.df['ma10'], label="MA10")
     plt.plot(t.df.index, t.df['ma60'], label="MA60")
     plt.plot(fillered_df.index, fillered_df['price'], label="Price")
-    plt.plot(t.df.index, t.df['close'], label="close")
+    plt.plot(t.df.index, t.df['baseline'], label="baseline")
     plt.legend(loc='best')
     plt.grid()
     plt.show()
