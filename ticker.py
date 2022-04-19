@@ -156,9 +156,10 @@ class Ticker :
                 pd.set_option('display.max_columns', None)
                 print_(self.name,'-------- Simple DataFrame ---------')
                 print(self.simp_df[ (self.simp_df['pway'].notnull()) | (self.simp_df['way'].notnull()) | (self.simp_df['attack'].notnull())],flush=True)
-                print_(self.name, f"[idx0:ma60 < ma120] {self.simp_df.iloc[0]['ma60']:,.4f} < {self.simp_df.iloc[0]['ma120']:,.4f}")
-                print_(self.name, f"[idx0:close >= idx0:ma5] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['ma5']:,.2f}")
-                print_(self.name, f"[idx1:close >= idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['ma5']:,.2f}")
+                print_(self.name, f"[idx0:ma5_asc > 0] {self.simp_df.iloc[0]['ma5_asc']:,.4f} > 0")
+                print_(self.name, f"[idx1:ma5_asc > 0] {self.simp_df.iloc[1]['ma5_asc']:,.4f} > 0")
+                print_(self.name, f"[idx0:close >= idx0:ma5] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['ma5']:,.4f}")
+                print_(self.name, f"[idx1:close >= idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['ma5']:,.4f}")
                 print_(self.name,'-----------------------------------')
 
                 if  (self.simp_df.iloc[0]['ma5_asc'] > 0) and \
