@@ -143,7 +143,6 @@ class Ticker :
             df = df.join(df_refined)
             df['attack'] = df.apply(
                 lambda row : 'good' if  (row['attack']=='good')  and  \
-                                        (row['ma5_asc'] > 0)  and  \
                                         (row['price'] * 1.008 < row['ma60']) and \
                                         (row['ma60']  < row['ma120']) else None, axis=1)
             self.df = df.copy()
@@ -162,7 +161,9 @@ class Ticker :
                 print_(self.name, f"[idx1:close >= idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['ma5']:,.2f}")
                 print_(self.name,'-----------------------------------')
 
-                if  (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['ma5']) and \
+                if  (self.simp_df.iloc[0]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['ma5']) and \
                     (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['ma5'])  :
                     self.target_price  = self.simp_df.iloc[0]['ma5']
                     self.losscut_price = self.target_price * 0.985

@@ -26,7 +26,7 @@ def init() :
         with open('balances.json') as f:
             dict_balances = dict(json.load(f))
     else : 
-        data1 = {'currency': 'KRW', 'balance': '1000000', 'avg_buy_price': '0'}
+        data1 = {'currency': 'KRW', 'balance': '2000000', 'avg_buy_price': '0'}
         history = []
         dict_balances = {'KRW': data1,'history':history}
         with open('balances.json', 'w') as f:
@@ -66,16 +66,17 @@ def get_avg_buy_price(currency):
 def  sell_limit_order(ticker,price,amount) :
     global upbit
     print_(ticker,f'sell_limit_order {price:,.4f}, {amount:,.4f}')
-    currency = ticker[ticker.find('-')+1:]
+    
     try :
-        t = dict_balances[currency]
-        balance =  float(t['balance'])
-        t['balance'] = balance - amount
-
         if  _UPBIT_ENABLE :
             ret = upbit.sell_limit_order(ticker, price, amount)
             print_(ticker,f'upbit sell_limit_order {price:,.4f}, {amount:,.4f}')
             print_(ticker,f'upbit sell_limit_order ret = {ret}')
+
+        currency = ticker[ticker.find('-')+1:]
+        t = dict_balances[currency]
+        balance =  float(t['balance'])
+        t['balance'] = balance - amount
 
         historys = dict_balances['history']
         history = []
@@ -102,6 +103,12 @@ def  sell_limit_order(ticker,price,amount) :
 def  buy_limit_order(ticker,price,amount) :
     global upbit
     print_(ticker,f'buy_limit_order {price:,.4f}, {amount:,.4f}')
+
+    if  _UPBIT_ENABLE :
+        ret = upbit.buy_limit_order(ticker, price, amount )
+        print_(ticker,f'upbit buy_limit_order {price:,.4f}, {amount:,.4f}')
+        print_(ticker,f'upbit buy_limit_order ret = {ret}')
+
     currency = ticker[ticker.find('-')+1:]
     try :
         t = dict_balances[currency]
@@ -116,11 +123,6 @@ def  buy_limit_order(ticker,price,amount) :
         dict_tmp['avg_buy_price'] = price
         dict_balances[currency] = dict_tmp
     
-    if  _UPBIT_ENABLE :
-        ret = upbit.buy_limit_order(ticker, price, amount )
-        print_(ticker,f'upbit buy_limit_order {price:,.4f}, {amount:,.4f}')
-        print_(ticker,f'upbit buy_limit_order ret = {ret}')
-
     historys = dict_balances['history']
     history = []
     history.append(dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
