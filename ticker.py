@@ -1,5 +1,3 @@
-from cmath import nan
-import time
 import pyupbit
 import pandas as pd
 import numpy as np
@@ -46,30 +44,20 @@ class Ticker :
             df['ma10'] = df['close'].rolling(window=10).mean()
             df['ma60'] = df['close'].rolling(window=60).mean()
             df['ma120'] = df['close'].rolling(window=120).mean()
-            df['dispa60'] = (df['close'] - df['ma60']) / df['ma60']
-            df['max_dispa60'] = df['dispa60'].rolling(window=60).max()
-            df['baseline'] = (df['high'].rolling(window=26).max() + df['low'].rolling(window=26).min()) / 2
-
-            # conditionlist = [(df['ma10'] < df['ma5']) & \
-            #                 (df['ma10'].shift(1) >= df['ma5'].shift(1)) & \
-            #                 (df['ma10'].shift(2) >= df['ma5'].shift(2)) & \
-            #                 (df['ma10'].shift(3) >= df['ma5'].shift(3))   ,\
-            #                 (df['ma10'] > df['ma5']) & \
-            #                 (df['ma10'].shift(1) <= df['ma5'].shift(1)) &\
-            #                 (df['ma10'].shift(2) <= df['ma5'].shift(2)) &\
-            #                 (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
-            #                 ]        
             conditionlist = [(df['ma10'] < df['ma5']) & \
-                            (df['ma10'].shift(1) > df['ma5'].shift(1)) & \
+                            (df['ma10'].shift(1) >= df['ma5'].shift(1)) & \
                             (df['ma10'].shift(2) > df['ma5'].shift(2)) ,\
                             (df['ma10'] > df['ma5']) & \
-                            (df['ma10'].shift(1) < df['ma5'].shift(1)) &\
+                            (df['ma10'].shift(1) <= df['ma5'].shift(1)) &\
                             (df['ma10'].shift(2) < df['ma5'].shift(2)) \
                             ]      
             choicelist1 = ['golden', 'dead']
             df['way'] = np.select(conditionlist, choicelist1, default=None)
-            df['dispa60'] = df['dispa60'].astype(float, errors='ignore')
-            df['max_dispa60'] = df['max_dispa60'].astype(float, errors='ignore')
+            # disp_timestr = dt.datetime.now()
+            # disp_timestr = disp_timestr.replace(hour=10,minute=10)
+            # df = df[df.index >= disp_timestr]
+            # print('df')
+            # print(df)
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             df_copy = df[df['way'].notnull()]
@@ -78,50 +66,19 @@ class Ticker :
             stack_inflection_index = []  # 변곡점 index
             if len(df_copy.index) > 0 :
                 for row in df_copy.itertuples():
-                    if  len(stack_inflection_index) == 0 :
-                        temp = {}
-                        temp['pway'] = row.way   
-                        temp['price'] = row.close
-                        stack_inflection.append(temp)
-                        stack_inflection_index.append(row.Index)
-                    else :
-                        top = stack_inflection.pop()
-                        top_index = stack_inflection_index.pop()
-                        if row.way == 'golden' :
-                            price = df[(df.index > top_index) & (df.index <= row.Index) ]['low'].min()
-                            price_date =  df[(df.index > top_index) & (df.index <= row.Index) & (df['low']==price) ].index.min()
-                            if  top['pway'] == row.way :
-                                if  top['price'] <= price :
-                                    price = top['price']
-                                    price_date = min(price_date,top_index)
-                            else :
-                                stack_inflection.append(top)                             
-                                stack_inflection_index.append(top_index)    
-                        else :
-                            price = df[(df.index > top_index) & (df.index <= row.Index) ]['high'].max()
-                            price_date =  df[(df.index > top_index) & (df.index <= row.Index) & (df['high']==price) ].index.min()
-                            if  top['pway'] == row.way :
-                                if  top['price'] >= price :
-                                    price = top['price']
-                                    price_date = min(price_date,top_index)
-                            else :
-                                stack_inflection.append(top)                             
-                                stack_inflection_index.append(top_index)
+                    if  (len(stack_inflection_index) > 0) and (stack_inflection[-1]['pway'] == row.way) :
+                        stack_inflection.pop()
+                        stack_inflection_index.pop()
 
-                        temp = {}
-                        temp['pway'] = row.way
-                        temp['price'] = price     
-                        stack_inflection.append(temp)
-                        stack_inflection_index.append(price_date)
-
-                # print(stack_inflection)
-                # print(f'stack_inflection lne= {len(stack_inflection)}')
-                # print(stack_inflection_index)
-                # print(f'stack_inflection_index len={len(stack_inflection_index)}')
+                    temp = {}
+                    temp['pway'] = row.way
+                    temp['price'] = row.ma5
+                    stack_inflection.append(temp)
+                    stack_inflection_index.append(row.Index) 
             else :
                 return 'Nothing Turning-Point'
-
             df_refined = pd.DataFrame(stack_inflection, index=stack_inflection_index)
+
             if  len(df_refined.index) > 3 :    
                 df_refined['p_d1'] = df_refined['price'].shift(1)
                 df_refined['p_d2'] = df_refined['price'].shift(2)
@@ -147,7 +104,7 @@ class Ticker :
                                         (row['ma60']  < row['ma120']) else None, axis=1)
             self.df = df.copy()
             # 최근 공략가능한 부분위주로 요약된 df 를 생성한다.
-            todaystr = dt.datetime.now() - dt.timedelta(minutes=60)  #60분간만 대상
+            todaystr = dt.datetime.now() - dt.timedelta(minutes=30)  #30분간만 대상
             df = df[df.index >= todaystr]
             goodidx = df.index[df['attack']=='good'].tolist()
 
@@ -157,17 +114,13 @@ class Ticker :
                 print_(self.name,'-------- Simple DataFrame ---------')
                 print(self.simp_df[ (self.simp_df['pway'].notnull()) | (self.simp_df['way'].notnull()) | (self.simp_df['attack'].notnull())],flush=True)
                 print_(self.name, f"[idx1:ma5_asc > 0] {self.simp_df.iloc[1]['ma5_asc']:,.4f} > 0")
-                print_(self.name, f"[idx2:ma5_asc > 0] {self.simp_df.iloc[2]['ma5_asc']:,.4f} > 0")
                 print_(self.name, f"[idx1:ma5 > idx1:ma10] {self.simp_df.iloc[1]['ma5']:,.4f} > {self.simp_df.iloc[1]['ma10']:,.4f}")
                 print_(self.name, f"[idx1:close > idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} > {self.simp_df.iloc[1]['ma5']:,.4f}")
-                print_(self.name, f"[idx2:close > idx2:ma5] {self.simp_df.iloc[2]['close']:,.4f} > {self.simp_df.iloc[2]['ma5']:,.4f}")
                 print_(self.name,'-----------------------------------')
 
                 if  (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
                     (self.simp_df.iloc[1]['ma5'] > self.simp_df.iloc[1]['ma10']) and \
-                    (self.simp_df.iloc[1]['close'] > self.simp_df.iloc[1]['ma5']) and \
-                    (self.simp_df.iloc[2]['close'] > self.simp_df.iloc[2]['ma5'])  :
+                    (self.simp_df.iloc[1]['close'] > self.simp_df.iloc[1]['ma5']) :
                     self.target_price  = self.simp_df.iloc[0]['ma5']
                     self.losscut_price = self.target_price * 0.985
                 else :
@@ -189,13 +142,13 @@ if __name__ == "__main__":
     # print(t.df.tail(40))
     # t.df.to_excel('a.xlsx')
 
-    fillered_df = t.df[t.df['pway'] > '']
+    fillered_df = t.df[t.df['pway'].notnull()]
+    print(fillered_df)
     plt.figure(figsize=(9,5))
     plt.plot(t.df.index, t.df['ma5'], label="MA5")
     plt.plot(t.df.index, t.df['ma10'], label="MA10")
     plt.plot(t.df.index, t.df['ma60'], label="MA60")
     plt.plot(fillered_df.index, fillered_df['price'], label="Price")
-    plt.plot(t.df.index, t.df['baseline'], label="baseline")
     plt.legend(loc='best')
     plt.grid()
     plt.show()
