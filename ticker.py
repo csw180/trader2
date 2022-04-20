@@ -60,11 +60,11 @@ class Ticker :
             #                 (df['ma10'].shift(3) <= df['ma5'].shift(3)) \
             #                 ]        
             conditionlist = [(df['ma10'] < df['ma5']) & \
-                            (df['ma10'].shift(1) >= df['ma5'].shift(1)) & \
-                            (df['ma10'].shift(2) >= df['ma5'].shift(2)) ,\
+                            (df['ma10'].shift(1) > df['ma5'].shift(1)) & \
+                            (df['ma10'].shift(2) > df['ma5'].shift(2)) ,\
                             (df['ma10'] > df['ma5']) & \
-                            (df['ma10'].shift(1) <= df['ma5'].shift(1)) &\
-                            (df['ma10'].shift(2) <= df['ma5'].shift(2)) \
+                            (df['ma10'].shift(1) < df['ma5'].shift(1)) &\
+                            (df['ma10'].shift(2) < df['ma5'].shift(2)) \
                             ]      
             choicelist1 = ['golden', 'dead']
             df['way'] = np.select(conditionlist, choicelist1, default=None)
@@ -156,16 +156,18 @@ class Ticker :
                 pd.set_option('display.max_columns', None)
                 print_(self.name,'-------- Simple DataFrame ---------')
                 print(self.simp_df[ (self.simp_df['pway'].notnull()) | (self.simp_df['way'].notnull()) | (self.simp_df['attack'].notnull())],flush=True)
-                print_(self.name, f"[idx0:ma5_asc > 0] {self.simp_df.iloc[0]['ma5_asc']:,.4f} > 0")
                 print_(self.name, f"[idx1:ma5_asc > 0] {self.simp_df.iloc[1]['ma5_asc']:,.4f} > 0")
-                print_(self.name, f"[idx0:close >= idx0:ma5] {self.simp_df.iloc[0]['close']:,.4f} >= {self.simp_df.iloc[0]['ma5']:,.4f}")
-                print_(self.name, f"[idx1:close >= idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} >= {self.simp_df.iloc[1]['ma5']:,.4f}")
+                print_(self.name, f"[idx2:ma5_asc > 0] {self.simp_df.iloc[2]['ma5_asc']:,.4f} > 0")
+                print_(self.name, f"[idx1:ma5 > idx1:ma10] {self.simp_df.iloc[1]['ma5']:,.4f} > {self.simp_df.iloc[1]['ma10']:,.4f}")
+                print_(self.name, f"[idx1:close > idx1:ma5] {self.simp_df.iloc[1]['close']:,.4f} > {self.simp_df.iloc[1]['ma5']:,.4f}")
+                print_(self.name, f"[idx2:close > idx2:ma5] {self.simp_df.iloc[2]['close']:,.4f} > {self.simp_df.iloc[2]['ma5']:,.4f}")
                 print_(self.name,'-----------------------------------')
 
-                if  (self.simp_df.iloc[0]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[0]['close'] >= self.simp_df.iloc[0]['ma5']) and \
-                    (self.simp_df.iloc[1]['close'] >= self.simp_df.iloc[1]['ma5'])  :
+                if  (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
+                    (self.simp_df.iloc[1]['ma5'] > self.simp_df.iloc[1]['ma10']) and \
+                    (self.simp_df.iloc[1]['close'] > self.simp_df.iloc[1]['ma5']) and \
+                    (self.simp_df.iloc[2]['close'] > self.simp_df.iloc[2]['ma5'])  :
                     self.target_price  = self.simp_df.iloc[0]['ma5']
                     self.losscut_price = self.target_price * 0.985
                 else :
@@ -181,7 +183,7 @@ class Ticker :
         return 'success'
 
 if __name__ == "__main__":
-    t  = Ticker('KRW-MTL')
+    t  = Ticker('KRW-XRP')
     pd.set_option('display.max_columns', None)
     t.make_df()
     # print(t.df.tail(40))
