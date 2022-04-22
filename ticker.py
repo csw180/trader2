@@ -51,12 +51,12 @@ class Ticker :
 
             conditionlist = [(df['close'] > df['ma5']) & \
                             (df['close'].shift(1) <= df['ma5'].shift(1)) & \
-                            (df['close'].shift(2) < df['ma5'].shift(2)) & \
-                            (df['close'].shift(3) < df['ma5'].shift(3)) ,\
+                            (df['close'].shift(2) <= df['ma5'].shift(2)) & \
+                            (df['close'].shift(3) <= df['ma5'].shift(3)) ,\
                             (df['close'] < df['ma5']) & \
                             (df['close'].shift(1) >= df['ma5'].shift(1)) &\
-                            (df['close'].shift(2) > df['ma5'].shift(2)) &\
-                            (df['close'].shift(3) > df['ma5'].shift(3)) \
+                            (df['close'].shift(2) >= df['ma5'].shift(2)) &\
+                            (df['close'].shift(3) >= df['ma5'].shift(3)) \
                             ]        
             choicelist1 = ['up', 'down']
             choicelist2 = [df['low'].rolling(4).min(),df['high'].rolling(4).max()]
@@ -84,11 +84,11 @@ class Ticker :
             else :
                 return 'Nothing Turning-Point'
             df_refined = pd.DataFrame(stack_inflection, index=stack_inflection_index)
-            print(df_refined)
+            print(df)
             if  len(df_refined.index) > 3 :  
-                df_refined['p_d1'] = df_refined['price'].shift(-1)
-                df_refined['p_d2'] = df_refined['price'].shift(-2)
-                df_refined['p_d3'] = df_refined['price'].shift(-3)               
+                df_refined['p_d1'] = df_refined['price'].shift(1)
+                df_refined['p_d2'] = df_refined['price'].shift(2)
+                df_refined['p_d3'] = df_refined['price'].shift(3)               
 
                 df_refined['p_d1'] = df_refined['p_d1'].astype(float, errors ='ignore')
                 df_refined['p_d2'] = df_refined['p_d2'].astype(float, errors ='ignore')
@@ -106,7 +106,7 @@ class Ticker :
             df = df.join(df_refined)
             df['attack'] = df.apply(
                 lambda row : 'good' if  (row['attack']=='good')  and  \
-                                        (row['price'] * 1.005 < row['ma60']) and \
+                                        (row['price'] * 1.01 < row['ma60']) and \
                                         (row['ma60']  < row['ma120']) else None, axis=1)
             self.df = df.copy()
 
@@ -123,22 +123,21 @@ class Ticker :
                     pd.set_option('display.max_columns', None)
                     print_(self.name,'-------- Simple DataFrame ---------')
                     print(self.simp_df,flush=True)
-                    print_(self.name, f"[idx1,idx2:ma5_asc] {self.simp_df.iloc[1]['ma5_asc']:,.4f},{self.simp_df.iloc[2]['ma5_asc']:,.4f}")
-                    print_(self.name, f"[idx0:high < idx1:high] {self.simp_df.iloc[0]['high']:,.2f}<{self.simp_df.iloc[1]['high']:,.2f}")
-                    print_(self.name, f"[idx0:low < idx1:low] {self.simp_df.iloc[0]['low']:,.2f}<{self.simp_df.iloc[1]['low']:,.2f}")
-                    print_(self.name, f"[idx2:ma5 < idx2:low] {self.simp_df.iloc[2]['ma5']:,.4f}<{self.simp_df.iloc[2]['low']:,.2f}")
+                    print_(self.name, f"[idx1:ma5_asc] > 0 {self.simp_df.iloc[1]['ma5_asc']:,.4f} > 0")
+                    print_(self.name, f"[idx1:high > idx2:high] {self.simp_df.iloc[1]['high']:,.2f} > {self.simp_df.iloc[2]['high']:,.2f}")
+                    print_(self.name, f"[idx1:low > idx2:low] {self.simp_df.iloc[1]['low']:,.2f} > {self.simp_df.iloc[2]['low']:,.2f}")
+                    print_(self.name, f"[idx0:ma5 < idx0:low] {self.simp_df.iloc[0]['ma5']:,.4f} < {self.simp_df.iloc[0]['low']:,.2f}")
                     print_(self.name,'-----------------------------------')
                 else :
                     return f'Already or Yet! len(simp_df)={len(self.simp_df.index)} Maybe not 3'
 
                 if  (len(self.simp_df.index) == 3) and \
                     (self.simp_df.iloc[1]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[2]['ma5_asc'] > 0) and \
-                    (self.simp_df.iloc[0]['high'] < self.simp_df.iloc[1]['high']) and \
-                    (self.simp_df.iloc[0]['low']  < self.simp_df.iloc[1]['low']) and \
-                    (self.simp_df.iloc[2]['ma5'] < self.simp_df.iloc[2]['low']) :
-                        self.target_price =  self.simp_df.iloc[2]['ma5']
-                        self.losscut_price = self.simp_df.iloc[0]['price']
+                    (self.simp_df.iloc[1]['high'] > self.simp_df.iloc[2]['high']) and \
+                    (self.simp_df.iloc[1]['low'] > self.simp_df.iloc[2]['low']) and \
+                    (self.simp_df.iloc[0]['ma5'] < self.simp_df.iloc[0]['low']) :
+                        self.target_price =  self.simp_df.iloc[0]['ma5']
+                        self.losscut_price = self.simp_df.iloc[2]['price']
                 else :
                     return f'Detail condition not suitable'
             else :
@@ -151,7 +150,7 @@ class Ticker :
         return 'success'
 
 if __name__ == "__main__":
-    t  = Ticker('KRW-NEAR')
+    t  = Ticker('KRW-SBD')
     pd.set_option('display.max_columns', None)
     t.make_df()
     # print(t.df.tail(40))
@@ -163,7 +162,6 @@ if __name__ == "__main__":
     plt.plot(t.df.index, t.df['ma5'], label="MA5")
     plt.plot(t.df.index, t.df['ma60'], label="MA60")
     plt.plot(fillered_df.index, fillered_df['price'], label="Price")
-    plt.plot(t.df.index, t.df['close'], label="close")
     plt.legend(loc='best')
     plt.grid()
     plt.show()
