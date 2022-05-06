@@ -65,9 +65,9 @@ class Ticker :
             df['price'] = np.select(conditionlist, choicelist2, default=None)
             df['price'] = df['price'].astype(float, errors='ignore')
             df['ma60_below'] = df['ma60'] - df['price']
-            df['ma120_below'] = df['ma120'] - df['price']
+            df['ma20_above'] = df['price'] - df['ma20']
             df['ma60_below'] = df['ma60_below'].astype(float, errors='ignore')
-            df['ma120_below'] = df['ma120_below'].astype(float, errors='ignore')
+            df['ma20_above'] = df['ma20_above'].astype(float, errors='ignore')
 
             # refine_df  N모형의 꼭지점을 가지는 df 생성
             df_copy = df[df['way'].notnull()]
@@ -84,7 +84,7 @@ class Ticker :
                     temp['way'] = row.way
                     temp['price'] = row.price
                     temp['ma60_below'] = row.ma60_below
-                    temp['ma120_below'] = row.ma120_below
+                    temp['ma20_above'] = row.ma20_above
                     stack_inflection.append(temp)
                     stack_inflection_index.append(row.Index) 
             else :
@@ -94,26 +94,26 @@ class Ticker :
                 df_refined['p_d1'] = df_refined['price'].shift(1)
                 df_refined['p_d2'] = df_refined['price'].shift(2)
                 df_refined['below60_d2'] = df_refined['ma60_below'].shift(2)
-                df_refined['below120_d2'] = df_refined['ma120_below'].shift(2)
+                df_refined['above20_d2'] = df_refined['ma20_above'].shift(2)
                 df_refined['p_d3'] = df_refined['price'].shift(3)               
 
                 df_refined['p_d1'] = df_refined['p_d1'].astype(float, errors ='ignore')
                 df_refined['p_d2'] = df_refined['p_d2'].astype(float, errors ='ignore')
                 df_refined['below60_d2'] = df_refined['below60_d2'].astype(float, errors ='ignore')
-                df_refined['below120_d2'] = df_refined['below120_d2'].astype(float, errors ='ignore')
+                df_refined['above20_d2'] = df_refined['above20_d2'].astype(float, errors ='ignore')
                 df_refined['p_d3'] = df_refined['p_d3'].astype(float, errors ='ignore')
                 df_refined['price'] = df_refined['price'].astype(float, errors ='ignore')
                 df_refined['attack'] = df_refined.apply( 
                     lambda row : 'good' if (row['way'] == 'up') and \
                                             (row['price'] > (row['p_d2']*1.005)) and \
                                             (row['below60_d2'] > 0)  and \
-                                            (row['below120_d2'] > 0)  and \
+                                            (row['above20_d2'] > 0)  and \
                                             (row['p_d1'] * 1.005 < row['p_d3']) else None ,axis=1)
             else :
                 return f'Not enough Turning-Point {len(df_refined.index)}. May not > 3'
 
             # 기초 df 와 refine_df 를 join 한다.
-            df = df.drop(['way','price','ma60_below','ma120_below'],axis = 1)
+            df = df.drop(['way','price','ma60_below','ma20_above'],axis = 1)
             df = df.join(df_refined)
             df['attack'] = df.apply(
                 lambda row : 'good' if  (row['attack']=='good')  and  \
